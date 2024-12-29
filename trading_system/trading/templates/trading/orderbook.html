@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orderbook</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Orderbook</h2>
+        
+        <!-- Best Bid and Best Ask -->
+        <div class="row mb-3">
+            <div class="col">
+                <h4>Best Bid:</h4>
+                {% if best_bid %}
+                    <p>Price: {{ best_bid.price }} | Quantity: {{ best_bid.quantity }}</p>
+                {% else %}
+                    <p>No bids available</p>
+                {% endif %}
+            </div>
+            <div class="col">
+                <h4>Best Ask:</h4>
+                {% if best_ask %}
+                    <p>Price: {{ best_ask.price }} | Quantity: {{ best_ask.quantity }}</p>
+                {% else %}
+                    <p>No asks available</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Buy Orders -->
+        <h3>Buy Orders</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in buy_orders %}
+                    <tr>
+                        <td>{{ order.price }}</td>
+                        <td>{{ order.quantity }}</td>
+                        <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Sell Orders -->
+        <h3>Sell Orders</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in sell_orders %}
+                    <tr>
+                        <td>{{ order.price }}</td>
+                        <td>{{ order.quantity }}</td>
+                        <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Trades -->
+        <h3>Recent Trades</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Buyer</th>
+                    <th>Seller</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for trade in trades %}
+                    <tr>
+                        <td>{{ trade.buyer.username }}</td>
+                        <td>{{ trade.seller.username }}</td>
+                        <td>{{ trade.price }}</td>
+                        <td>{{ trade.quantity }}</td>
+                        <td>{{ trade.timestamp }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
