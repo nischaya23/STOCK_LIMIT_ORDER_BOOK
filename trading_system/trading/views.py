@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from .models import User, Order, Trade
 from django.db.models import Q
 from django.db import transaction
+from django.contrib.auth.decorators import login_required
+
 from .utils import match_order  # Assuming match_order is in utils.py
 from django.http import JsonResponse
 
@@ -14,8 +16,10 @@ def login(request):
 from django.shortcuts import render
 from .models import Order
 
-def home(request, user_id):
-    user = User.objects.get(id=user_id)
+@login_required  # Ensure the user is logged in before accessing this view
+def home(request):
+    user = request.user  # Get the logged-in user
+    user, created = User.objects.get_or_create(username=user)
 
     if request.method == "POST":
         order_type = request.POST.get('order_type')
@@ -43,17 +47,16 @@ def home(request, user_id):
             quantity=quantity,
             price=price,
             is_matched=False,
-            user=user  # Ensure the order is associated with the user
+            user=user  # Ensure the order is associated with the logged-in user
         )
         new_order.save()
 
         match_order(new_order)
 
     # Fetch orders associated with the user
-    orders = Order.objects.filter(user=user)  # Adjust query to filter by user_id
+    orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
 
-    return render(request, 'trading/home.html', {'user':user,'orders': orders})
-
+    return render(request, 'trading/home.html', {'user': user, 'orders': orders})
 
 def get_best_ask_price(request):
     # Fetch the best ask price (lowest available price for a buy order)
