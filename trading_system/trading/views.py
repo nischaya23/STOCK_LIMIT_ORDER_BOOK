@@ -33,9 +33,9 @@ def home(request):
         
         elif order_mode == "MARKET":
             if order_type == "BUY":
-                price = get_best_ask_price()  # Fetch best ask price for a buy order
+                price = get_best_ask()  # Fetch best ask price for a buy order
             elif order_type == "SELL":
-                price = get_best_bid_price()  # Fetch best bid price for a sell order
+                price = get_best_bid()  # Fetch best bid price for a sell order
             
             if price is None:
                 return render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
@@ -58,19 +58,21 @@ def home(request):
 
     return render(request, 'trading/home.html', {'user': user, 'orders': orders})
 
-def get_best_ask_price(request):
+def get_best_ask(request):
+    if request.method == 'GET':
     # Fetch the best ask price (lowest available price for a buy order)
-    best_ask = Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').first()
+        best_ask = Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'quantity').first()
     if best_ask:
-        return JsonResponse({'best_ask_price': best_ask.price})
-    return JsonResponse({'best_ask_price': None})
+        return JsonResponse({'best_ask': best_ask})
+    return JsonResponse({'best_ask': None})
 
-def get_best_bid_price(request):
+def get_best_bid(request):
+    if request.method == 'GET':
     # Fetch the best bid price (highest available price for a sell order)
-    best_bid = Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').first()
+        best_bid = Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'quantity').first()
     if best_bid:
-        return JsonResponse({'best_bid_price': best_bid.price})
-    return JsonResponse({'best_bid_price': None})
+        return JsonResponse({'best_bid': best_bid})
+    return JsonResponse({'best_bid': None})
 
 
 from django.shortcuts import render
@@ -100,3 +102,21 @@ def clear_database(request):
     Order.objects.all().delete()
     Trade.objects.all().delete()
     return redirect('login')
+
+def get_buy_orders(request):
+    if request.method == 'GET':
+        buy_orders = Order.objects.filter(order_type='BUY', is_matched = False).values('price','quantity', 'is_matched')
+        return JsonResponse({'buy_orders': list(buy_orders)})
+
+def get_sell_orders(request):
+    if request.method == 'GET':
+        sell_orders = Order.objects.filter(order_type='SELL', is_matched = False).values('price','quantity', 'is_matched')
+        return JsonResponse({'sell_orders': list(sell_orders)})
+
+def get_recent_trades(request):
+    if request.method == 'GET':
+        recent_trades = Trade.objects.all().order_by('-timestamp')[:10].values(
+            'buyer','seller', 'price', 'quantity', 'timestamp'
+        )  # Adjust fields and ordering as needed
+        return JsonResponse({'trades': list(recent_trades)})
+
