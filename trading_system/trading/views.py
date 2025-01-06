@@ -3,6 +3,7 @@ from .models import User, Order, Trade
 from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
+import json
 
 from .utils import match_order  # Assuming match_order is in utils.py
 from django.http import JsonResponse
@@ -13,8 +14,26 @@ def login(request):
         user, created = User.objects.get_or_create(username=username)
         return redirect('home', user_id=user.id)
     return render(request, 'trading/login.html')
-from django.shortcuts import render
-from .models import Order
+def fetch_best_ask():
+    # Fetch the best ask price (lowest available price for a buy order)
+    return Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'quantity').first()
+def fetch_best_bid():
+    # Fetch the best bid price (highest available price for a sell order)
+    return Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'quantity').first()
+
+def get_best_ask(request):
+    if request.method == 'GET':
+    # Fetch the best ask price (lowest available price for a buy order)
+        best_ask = Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'quantity').first()
+        return JsonResponse({'best_ask': best_ask})
+    return JsonResponse({'best_ask': None})
+
+def get_best_bid(request):
+    if request.method == 'GET':
+    # Fetch the best bid price (highest available price for a sell order)
+        best_bid = Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'quantity').first()
+        return JsonResponse({'best_bid': best_bid})
+    return JsonResponse({'best_bid': None})
 
 @login_required  # Ensure the user is logged in before accessing this view
 def home(request):
@@ -25,18 +44,25 @@ def home(request):
         order_type = request.POST.get('order_type')
         order_mode = request.POST.get('order_mode')
         quantity = int(request.POST.get('quantity'))
-        
+
         price = None
-        
+
         if order_mode == "LIMIT":
             price = float(request.POST.get('price', 0))  # Default to 0 if no price is provided
-        
+
         elif order_mode == "MARKET":
             if order_type == "BUY":
-                price = get_best_ask()  # Fetch best ask price for a buy order
+                # Fetch the JSON response from the best ask view
+                best_ask_response = fetch_best_ask()
+                best_ask_data=best_ask_response
+                price = best_ask_data['price']
+
             elif order_type == "SELL":
-                price = get_best_bid()  # Fetch best bid price for a sell order
-            
+                # Fetch the JSON response from the best bid view
+                best_bid_response = fetch_best_bid()
+                best_bid_data=best_bid_response
+                price = best_bid_data['price']
+
             if price is None:
                 return render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
         
@@ -58,21 +84,7 @@ def home(request):
 
     return render(request, 'trading/home.html', {'user': user, 'orders': orders})
 
-def get_best_ask(request):
-    if request.method == 'GET':
-    # Fetch the best ask price (lowest available price for a buy order)
-        best_ask = Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'quantity').first()
-    if best_ask:
-        return JsonResponse({'best_ask': best_ask})
-    return JsonResponse({'best_ask': None})
 
-def get_best_bid(request):
-    if request.method == 'GET':
-    # Fetch the best bid price (highest available price for a sell order)
-        best_bid = Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'quantity').first()
-    if best_bid:
-        return JsonResponse({'best_bid': best_bid})
-    return JsonResponse({'best_bid': None})
 
 
 from django.shortcuts import render

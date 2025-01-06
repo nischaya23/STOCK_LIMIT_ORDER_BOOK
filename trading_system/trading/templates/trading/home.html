@@ -11,56 +11,72 @@
     <script>
         // Function to update the price field when market order is selected
         function updatePrice() {
-            var orderType = document.querySelector('select[name="order_type"]').value;
-            var orderMode = document.querySelector('select[name="order_mode"]').value;
-            var priceField = document.querySelector('input[name="price"]');
+    var orderType = document.querySelector('select[name="order_type"]').value;
+    var orderMode = document.querySelector('select[name="order_mode"]').value;
+    var priceField = document.querySelector('input[name="price"]');
+    var priceLabel = document.getElementById('price-label');
 
-            // If it's a market order, disable the price field and set the price based on best available prices
-            if (orderMode === 'MARKET') {
-                priceField.disabled = true;
+    if (orderMode === 'MARKET') {
+        priceField.disabled = true;
+        priceLabel.textContent = "Price (Auto-Fetched):";
 
-                // Fetch the best price based on order type
-                if (orderType === 'BUY') {
-            // For BUY market orders, fetch the best ask price (lowest available)
-            fetch('get_best_ask/')  // URL for the view to get best ask price
-                .then(response => response.json())
-                .then(data => {
-                    if (data.best_ask.price !== null) {
-                        priceField.value = data.best_ask.price;
-                    } else {
-                        priceField.value = "No available ask price";
+        if (orderType === 'BUY') {
+            // Fetch the best ask price
+            fetch('get_best_ask/')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch best ask price');
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.best_ask && data.best_ask.price !== undefined) {
+                        priceField.value = data.best_ask.price; // Set the price
+                    } else {
+                        priceField.value = 'Unavailable';
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    priceField.value = 'Error fetching price';
                 });
         } else if (orderType === 'SELL') {
-            // For SELL market orders, fetch the best bid price (highest available)
-            fetch('get_best_bid/')  // URL for the view to get best bid price
-                .then(response => response.json())
-                .then(data => {
-                    if (data.best_bid_price !== null) {
-                        priceField.value = data.best_bid.price;
-                    } else {
-                        priceField.value = "No available bid price";
+            // Fetch the best bid price
+            fetch('get_best_bid/')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch best bid price');
                     }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.best_bid && data.best_bid.price !== undefined) {
+                        priceField.value = data.best_bid.price; // Set the price
+                    } else {
+                        priceField.value = 'Unavailable';
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    priceField.value = 'Error fetching price';
                 });
         }
-            } else {
-                priceField.disabled = false;
-                priceField.value = '';  // Clear price field if it's not a market order
-            }
-        }
+    } else {
+        priceField.disabled = false;
+        priceLabel.textContent = "Price (Enter Value):";
+        priceField.value = ''; // Clear the price field for limit orders
+    }
+}
 
-        // Add event listeners to the order type and order mode dropdowns
-        document.addEventListener('DOMContentLoaded', function() {
-            var orderTypeSelect = document.querySelector('select[name="order_type"]');
-            var orderModeSelect = document.querySelector('select[name="order_mode"]');
+// Attach event listeners to update price dynamically
+document.addEventListener('DOMContentLoaded', function () {
+    var orderTypeField = document.querySelector('select[name="order_type"]');
+    var orderModeField = document.querySelector('select[name="order_mode"]');
+    orderTypeField.addEventListener('change', updatePrice);
+    orderModeField.addEventListener('change', updatePrice);
+    updatePrice(); // Initialize price on page load
+});
 
-            // Update the price field when the order type or mode changes
-            orderTypeSelect.addEventListener('change', updatePrice);
-            orderModeSelect.addEventListener('change', updatePrice);
-
-            // Initialize the price field on page load
-            updatePrice();
-        });
     </script>
 </head>
 <body>
@@ -72,14 +88,14 @@
             {% csrf_token %}
             <div class="form-group">
                 <label for="order_type">Order Type:</label>
-                <select name="order_type" class="form-control">
+                <select name="order_type" class="form-control" onchange="updatePrice()">
                     <option value="BUY">Buy</option>
                     <option value="SELL">Sell</option>
                 </select>
             </div>
             <div class="form-group">
                 <label for="order_mode">Order Mode:</label>
-                <select name="order_mode" class="form-control">
+                <select name="order_mode" class="form-control" onchange="updatePrice()">
                     <option value="MARKET">Market</option>
                     <option value="LIMIT">Limit</option>
                 </select>
@@ -89,9 +105,10 @@
                 <input type="number" name="quantity" class="form-control" required>
             </div>
             <div class="form-group">
-                <label for="price">Price:</label>
+                <label id="price-label" for="price">Price:</label>
                 <input type="number" step="0.01" name="price" class="form-control">
             </div>
+            
             <button type="submit" class="btn btn-primary">Submit Order</button>
         </form>
 
