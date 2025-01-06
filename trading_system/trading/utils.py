@@ -10,7 +10,7 @@ def match_order(new_order):
             opposite_orders = Order.objects.filter(
                 order_type='SELL', 
                 order_mode='LIMIT', 
-                price__lte=new_order.price, 
+                # price__lte=new_order.price, 
                 is_matched=False
             ).order_by('price', 'timestamp')
         
@@ -19,7 +19,7 @@ def match_order(new_order):
             opposite_orders = Order.objects.filter(
                 order_type='BUY', 
                 order_mode='LIMIT', 
-                price__gte=new_order.price, 
+                # price__gte=new_order.price, 
                 is_matched=False
             ).order_by('-price', 'timestamp')
 
@@ -65,6 +65,8 @@ def match_order(new_order):
             remaining_quantity -= match_quantity
             opposite_order.quantity -= match_quantity
             new_order.quantity -= match_quantity
+            opposite_order.save()
+            new_order.save()
 
             # If the opposite order is fully matched, mark it as matched
             if opposite_order.quantity == 0:
