@@ -38,53 +38,110 @@ def match_order(new_order):
             ).order_by('-price', 'timestamp')
 
         # Try to match with the opposite orders
-        remaining_quantity = new_order.quantity
-        for opposite_order in opposite_orders:
-            if remaining_quantity <= 0:
-                break
-            
-            match_quantity = min(remaining_quantity, opposite_order.quantity)
+        if(new_order.order_mode=="LIMIT"):
+            remaining_quantity = new_order.quantity
+            for opposite_order in opposite_orders:
+                if remaining_quantity <= 0:
+                    break
+                
+                match_quantity = min(remaining_quantity, opposite_order.quantity)
 
-            # For limit orders, the price is already set in the opposite order
-            if new_order.order_mode == 'LIMIT':
-                match_price = opposite_order.price
-            # For market orders, the price is taken from the best available order
-            else:
-                match_price = opposite_order.price
+                # For limit orders, the price is already set in the opposite order
+                if new_order.order_mode == 'LIMIT':
+                    match_price = opposite_order.price
+                # For market orders, the price is taken from the best available order
+                else:
+                    match_price = opposite_order.price
 
-            # Create a trade entry for the matched orders
-            Trade.objects.create(
-                buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
-                seller=opposite_order.user if new_order.order_type == 'BUY' else new_order.user,
-                quantity=match_quantity,
-                price=match_price,
-                timestamp=timezone.now()
-            )
+                # Create a trade entry for the matched orders
+                Trade.objects.create(
+                    buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
+                    seller=opposite_order.user if new_order.order_type == 'BUY' else new_order.user,
+                    quantity=match_quantity,
+                    price=match_price,
+                    timestamp=timezone.now()
+                )
 
-            # Update the quantities of the matched orders
-            remaining_quantity -= match_quantity
-            opposite_order.quantity -= match_quantity
-            new_order.quantity -= match_quantity
-            opposite_order.save()
-            new_order.save()
-
-            # If the opposite order is fully matched, mark it as matched
-            if opposite_order.quantity == 0:
-                opposite_order.is_matched = True
+                # Update the quantities of the matched orders
+                remaining_quantity -= match_quantity
+                opposite_order.quantity -= match_quantity
+                new_order.quantity -= match_quantity
                 opposite_order.save()
+                new_order.save()
 
-            # If the new order is fully matched, mark it as matched
-            if new_order.quantity == 0:
+                # If the opposite order is fully matched, mark it as matched
+                if opposite_order.quantity == 0:
+                    opposite_order.is_matched = True
+                    opposite_order.save()
+
+                # If the new order is fully matched, mark it as matched
+                if new_order.quantity == 0:
+                    new_order.is_matched = True
+                    new_order.save()
+
+            # If the new order is partially matched, update its quantity and status
+            if new_order.quantity > 0:
+                new_order.save()
+            else:
                 new_order.is_matched = True
                 new_order.save()
 
-        # If the new order is partially matched, update its quantity and status
-        if new_order.quantity > 0:
+            # Ensure that any remaining unmatched orders are still available for future matches
+            new_order.timestamp = timezone.now()
             new_order.save()
         else:
-            new_order.is_matched = True
-            new_order.save()
+            remaining_quantity=new_order.quantity
+            complete_order=False
+            # while(remaining_quantity>0):
+            try:
+                for opposite_order in opposite_orders:
+                    if(remaining_quantity<=0):
+                        complete_order=True
+                        break
+                    match_quantity=min(opposite_order.quantity,remaining_quantity)
+                    if(match_quantity==opposite_order.quantity):
+                        Trade.objects.create(
+                            buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
+                            seller=opposite_order.user if new_order.order_type == 'BUY' else new_order.user,
+                            quantity=match_quantity,
+                            price=opposite_order.price,
+                            timestamp=timezone.now()
+                        )
+                        remaining_quantity-=match_quantity
+                        opposite_order.quantity -= match_quantity
+                        new_order.quantity -= match_quantity
+                        opposite_order.is_matched = True
+                        opposite_order.save()
+                        new_order.save()
+                    else:
+                        Trade.objects.create(
+                            buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
+                            seller=opposite_order.user if new_order.order_type == 'BUY' else new_order.user,
+                            quantity=match_quantity,
+                            price=opposite_order.price,
+                            timestamp=timezone.now()
+                        )
+                        remaining_quantity-=match_quantity
+                        opposite_order.quantity -= match_quantity
+                        new_order.quantity -= match_quantity
+                        new_order.is_matched=True
+                        opposite_order.save()
+                        new_order.save()
+            except Exception as e:
+                print('Some Error Occured')
+            
+            if(complete_order==False):
+                #the leftover quantity is converted to 0
+                remaining_quantity=0
+                new_order.quantity=0
+                new_order.is_matched=True
+                new_order.save()
+                print("Incomplete order Placed")
 
-        # Ensure that any remaining unmatched orders are still available for future matches
-        new_order.timestamp = timezone.now()
-        new_order.save()
+               
+                
+            
+
+
+
+

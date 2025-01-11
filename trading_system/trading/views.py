@@ -46,38 +46,40 @@ def home(request):
         quantity = int(request.POST.get('quantity'))
 
         price = None
+        try:
+            if order_mode == "LIMIT":
+                price = float(request.POST.get('price', 0))  # Default to 0 if no price is provided
 
-        if order_mode == "LIMIT":
-            price = float(request.POST.get('price', 0))  # Default to 0 if no price is provided
+            elif order_mode == "MARKET":
+                if order_type == "BUY":
+                    # Fetch the JSON response from the best ask view
+                    best_ask_response = fetch_best_ask()
+                    best_ask_data=best_ask_response
+                    price = best_ask_data['price']
 
-        elif order_mode == "MARKET":
-            if order_type == "BUY":
-                # Fetch the JSON response from the best ask view
-                best_ask_response = fetch_best_ask()
-                best_ask_data=best_ask_response
-                price = best_ask_data['price']
+                elif order_type == "SELL":
+                    # Fetch the JSON response from the best bid view
+                    best_bid_response = fetch_best_bid()
+                    best_bid_data=best_bid_response
+                    price = best_bid_data['price']
 
-            elif order_type == "SELL":
-                # Fetch the JSON response from the best bid view
-                best_bid_response = fetch_best_bid()
-                best_bid_data=best_bid_response
-                price = best_bid_data['price']
-
-            if price is None:
-                return render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
+                if price is None:
+                    return render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
+                    # Create and save the new order
+            new_order = Order(
+                order_type=order_type,
+                order_mode=order_mode,
+                quantity=quantity,
+                price=price,
+                is_matched=False,
+                user=user  # Ensure the order is associated with the logged-in user
+            )
+            new_order.save()
+            match_order(new_order)
+        except Exception as e:
+            render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
         
-        # Create and save the new order
-        new_order = Order(
-            order_type=order_type,
-            order_mode=order_mode,
-            quantity=quantity,
-            price=price,
-            is_matched=False,
-            user=user  # Ensure the order is associated with the logged-in user
-        )
-        new_order.save()
 
-        match_order(new_order)
 
     # Fetch orders associated with the user
     orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
