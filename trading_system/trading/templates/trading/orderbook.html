@@ -108,8 +108,17 @@
                 .then(data => {
                     const tableBody = document.querySelector('#buy-orders tbody');
                     tableBody.innerHTML = ''; // Clear existing rows
-    
-                    data.buy_orders.forEach(order => {
+
+                    // Sort orders by price (descending), then by timestamp (ascending)
+                    const sortedOrders = data.buy_orders.sort((a, b) => {
+                        if (a.price !== b.price) {
+                            return b.price - a.price; // Higher price first
+                        }
+                        return new Date(a.timestamp) - new Date(b.timestamp); // Earlier timestamp first
+                    });
+
+                    // Populate the table with sorted orders
+                    sortedOrders.forEach(order => {
                         const row = `
                             <tr>
                                 <td>${order.price}</td>
@@ -129,8 +138,17 @@
                 .then(data => {
                     const tableBody = document.querySelector('#sell-orders tbody');
                     tableBody.innerHTML = ''; // Clear existing rows
-    
-                    data.sell_orders.forEach(order => {
+
+                    // Sort orders by price (ascending), then by timestamp (ascending)
+                    const sortedOrders = data.sell_orders.sort((a, b) => {
+                        if (a.price !== b.price) {
+                            return a.price - b.price; // Lower price first
+                        }
+                        return new Date(a.timestamp) - new Date(b.timestamp); // Earlier timestamp first
+                    });
+
+                    // Populate the table with sorted orders
+                    sortedOrders.forEach(order => {
                         const row = `
                             <tr>
                                 <td>${order.price}</td>
@@ -142,7 +160,7 @@
                 })
                 .catch(error => console.error('Error fetching Sell Orders:', error));
         }
-    
+
         // Function to update Recent Trades table
         function updateRecentTrades() {
             fetch('get_recent_trades/')  // URL for fetching Recent Trades
