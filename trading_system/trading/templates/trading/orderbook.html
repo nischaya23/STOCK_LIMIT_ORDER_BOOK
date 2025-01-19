@@ -103,63 +103,79 @@
     <script>
         // Function to update Buy Orders table
         function updateBuyOrders() {
-            fetch('get_buy_orders/')  // URL for fetching Buy Orders
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = document.querySelector('#buy-orders tbody');
-                    tableBody.innerHTML = ''; // Clear existing rows
+    fetch('get_buy_orders/') // URL for fetching Buy Orders
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.querySelector('#buy-orders tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
 
-                    // Sort orders by price (descending), then by timestamp (ascending)
-                    const sortedOrders = data.buy_orders.sort((a, b) => {
-                        if (a.price !== b.price) {
-                            return b.price - a.price; // Higher price first
-                        }
-                        return new Date(a.timestamp) - new Date(b.timestamp); // Earlier timestamp first
-                    });
+            // Group orders by price
+            const groupedOrders = {};
+            data.buy_orders.forEach(order => {
+                if (!groupedOrders[order.price]) {
+                    groupedOrders[order.price] = { quantity: 0, is_matched: order.is_matched };
+                }
+                groupedOrders[order.price].quantity += order.quantity;
+            });
 
-                    // Populate the table with sorted orders
-                    sortedOrders.forEach(order => {
-                        const row = `
-                            <tr>
-                                <td>${order.price}</td>
-                                <td>${order.quantity}</td>
-                                <td>${order.is_matched ? 'Matched' : 'Unmatched'}</td>
-                            </tr>`;
-                        tableBody.innerHTML += row;
-                    });
-                })
-                .catch(error => console.error('Error fetching Buy Orders:', error));
-        }
-    
-        // Function to update Sell Orders table
-        function updateSellOrders() {
-            fetch('get_sell_orders/')  // URL for fetching Sell Orders
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = document.querySelector('#sell-orders tbody');
-                    tableBody.innerHTML = ''; // Clear existing rows
+            // Convert grouped orders into an array and sort
+            const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                const priceA = parseFloat(a[0]);
+                const priceB = parseFloat(b[0]);
+                return priceB - priceA; // Higher price first
+            });
 
-                    // Sort orders by price (ascending), then by timestamp (ascending)
-                    const sortedOrders = data.sell_orders.sort((a, b) => {
-                        if (a.price !== b.price) {
-                            return a.price - b.price; // Lower price first
-                        }
-                        return new Date(a.timestamp) - new Date(b.timestamp); // Earlier timestamp first
-                    });
+            // Populate the table with grouped and sorted orders
+            sortedOrders.forEach(([price, details]) => {
+                const row = `
+                    <tr>
+                        <td>${price}</td>
+                        <td>${details.quantity}</td>
+                        <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+        })
+        .catch(error => console.error('Error fetching Buy Orders:', error));
+}
 
-                    // Populate the table with sorted orders
-                    sortedOrders.forEach(order => {
-                        const row = `
-                            <tr>
-                                <td>${order.price}</td>
-                                <td>${order.quantity}</td>
-                                <td>${order.is_matched ? 'Matched' : 'Unmatched'}</td>
-                            </tr>`;
-                        tableBody.innerHTML += row;
-                    });
-                })
-                .catch(error => console.error('Error fetching Sell Orders:', error));
-        }
+// Function to update Sell Orders table
+function updateSellOrders() {
+    fetch('get_sell_orders/') // URL for fetching Sell Orders
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.querySelector('#sell-orders tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            // Group orders by price
+            const groupedOrders = {};
+            data.sell_orders.forEach(order => {
+                if (!groupedOrders[order.price]) {
+                    groupedOrders[order.price] = { quantity: 0, is_matched: order.is_matched };
+                }
+                groupedOrders[order.price].quantity += order.quantity;
+            });
+
+            // Convert grouped orders into an array and sort
+            const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                const priceA = parseFloat(a[0]);
+                const priceB = parseFloat(b[0]);
+                return priceA - priceB; // Lower price first
+            });
+
+            // Populate the table with grouped and sorted orders
+            sortedOrders.forEach(([price, details]) => {
+                const row = `
+                    <tr>
+                        <td>${price}</td>
+                        <td>${details.quantity}</td>
+                        <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+        })
+        .catch(error => console.error('Error fetching Sell Orders:', error));
+}
 
         // Function to update Recent Trades table
         function updateRecentTrades() {
