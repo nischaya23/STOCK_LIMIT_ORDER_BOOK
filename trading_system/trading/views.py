@@ -4,6 +4,7 @@ from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 import json
+from django.contrib import messages
 
 from .utils import match_order  # Assuming match_order is in utils.py
 from django.http import JsonResponse
@@ -76,6 +77,7 @@ def home(request):
             )
             new_order.save()
             match_order(new_order)
+            messages.success(request, 'Your order has been placed successfully!')
         except Exception as e:
             render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
         

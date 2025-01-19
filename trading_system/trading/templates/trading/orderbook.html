@@ -3,163 +3,222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orderbook</title>
+    <title>Orderbook Dashboard</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #1e1e2f;
+            color: #fff;
+        }
+        .card {
+            background-color: #2b2b3c;
+            border: none;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        .table {
+            color: #fff;
+            background-color: #2b2b3c;
+        }
+        .table th, .table td {
+            color: #fff;
+        }
+        .row {
+            margin-top: 20px;
+        }
+        h2, h3 {
+            color: #ffc107;
+        }
+        .dashboard-title {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
-        <h2>Orderbook</h2>
+        <h2 class="dashboard-title" style="color: coral">Orderbook Dashboard</h2>
         
-        <!-- Best Bid and Best Ask -->
-        <div class="row mb-3">
-            <div class="col">
-                <h4>Best Bid:</h4>
-                <p id = "best-bid"> </p>
+        <!-- Best Bid and Best Ask Cards -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h4 style="color: coral">Best Bid</h4>
+                    <p id="best-bid">Loading...</p>
+                </div>
             </div>
-            <div class="col">
-                <h4>Best Ask:</h4>
-                <p id = "best-ask"></p>
+            <div class="col-md-6">
+                <div class="card p-3">
+                    <h4 style="color: coral">Best Ask</h4>
+                    <p id="best-ask">Loading...</p>
+                </div>
             </div>
         </div>
-    <script>
-            function updateBestBid() {
-                fetch('get_best_bid/')  // URL for fetching Best Bid
-                    .then(response => response.json())
-                    .then(data => {
-                        const bestBidContainer = document.querySelector('#best-bid');
-                            if (data.best_bid.price !== null) {
-                            bestBidContainer.innerHTML = `Price: ${data.best_bid.price} | Quantity: ${data.best_bid.quantity}`;
-                                } 
-                            else{
-                        bestBidContainer.innerHTML = 'No bids available';
-                      }
-                    })
-                .catch(error => console.error('Error fetching Best Bid:', error));
-            }
-          
-        
-            //Function to update Best Ask
-            function updateBestAsk() {
-            fetch('get_best_ask/')  // URL for fetching Best Ask
-                .then(response => response.json())
-                .then(data => {
-                    const bestAskContainer = document.querySelector('#best-ask');
-                    if (data.best_ask_price !== null) {
-                        bestAskContainer.innerHTML = `Price: ${data.best_ask.price} | Quantity: ${data.best_ask.quantity}`;
-                    } else {
-                        bestAskContainer.innerHTML = 'No asks available';
-                    }
-                })
-                .catch(error => console.error('Error fetching Best Ask:', error));
-        }
-    </script>
 
-        <!-- Buy Orders -->
-        <h3>Buy Orders</h3>
-        <table id = "buy-orders" class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
+        <!-- Buy and Sell Orders -->
+        <div class="row">
+            <div class="col-md-6">
+                <h3 style="color: coral">Buy Orders</h3>
+                <table id="buy-orders" class="table table-striped">
+                    <thead style="color: coral">
+                        <tr>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="3">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h3 style="color: coral" >Sell Orders </h3>
+                <table id="sell-orders" class="table table-striped">
+                    <thead style="color:coral;">
+                        <tr>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="3">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-            </tbody>
-        </table>
-
-        <!-- Sell Orders -->
-        <h3>Sell Orders</h3>
-        <table id = "sell-orders" class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-
-        <!-- Trades --> 
-        <h3>Recent Trades</h3>
-        <table id="trades" class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Buyer</th>
-                    <th>Seller</th>
-                    <th>Price</th>
-                    <th>Quantity</th>
-                    <th>Timestamp</th>
-                </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
+        <!-- Recent Trades -->
+        <div class="row">
+            <div class="col-12">
+                <h3 style="color: coral">Recent Trades</h3>
+                <table id="trades" class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Buyer</th>
+                            <th>Seller</th>
+                            <th>Price</th>
+                            <th>Quantity</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="5">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
+        function updateBestBid() {
+            fetch('get_best_bid/')  // URL for fetching Best Bid
+                .then(response => response.json())
+                .then(data => {
+                    const bestBidContainer = document.querySelector('#best-bid');
+                        if (data.best_bid.price !== null) {
+                        bestBidContainer.innerHTML = `Price: ${data.best_bid.price} | Quantity: ${data.best_bid.quantity}`;
+                            } 
+                        else{
+                    bestBidContainer.innerHTML = 'No bids available';
+                  }
+                })
+            .catch(error => console.error('Error fetching Best Bid:', error));
+        }
+      
+    
+        //Function to update Best Ask
+        function updateBestAsk() {
+        fetch('get_best_ask/')  // URL for fetching Best Ask
+            .then(response => response.json())
+            .then(data => {
+                const bestAskContainer = document.querySelector('#best-ask');
+                if (data.best_ask_price !== null) {
+                    bestAskContainer.innerHTML = `Price: ${data.best_ask.price} | Quantity: ${data.best_ask.quantity}`;
+                } else {
+                    bestAskContainer.innerHTML = 'No asks available';
+                }
+            })
+            .catch(error => console.error('Error fetching Best Ask:', error));
+    }
+
+
         // Function to update Buy Orders table
         function updateBuyOrders() {
-            fetch('get_buy_orders/')  // URL for fetching Buy Orders
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = document.querySelector('#buy-orders tbody');
-                    tableBody.innerHTML = ''; // Clear existing rows
+    fetch('get_buy_orders/') // URL for fetching Buy Orders
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.querySelector('#buy-orders tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
 
-                    // Sort orders by price (descending), then by timestamp (ascending)
-                    const sortedOrders = data.buy_orders.sort((a, b) => {
-                        if (a.price !== b.price) {
-                            return b.price - a.price; // Higher price first
-                        }
-                        return new Date(a.timestamp) - new Date(b.timestamp); // Earlier timestamp first
-                    });
+            // Group orders by price
+            const groupedOrders = {};
+            data.buy_orders.forEach(order => {
+                if (!groupedOrders[order.price]) {
+                    groupedOrders[order.price] = { quantity: 0, is_matched: order.is_matched };
+                }
+                groupedOrders[order.price].quantity += order.quantity;
+            });
 
-                    // Populate the table with sorted orders
-                    sortedOrders.forEach(order => {
-                        const row = `
-                            <tr>
-                                <td>${order.price}</td>
-                                <td>${order.quantity}</td>
-                                <td>${order.is_matched ? 'Matched' : 'Unmatched'}</td>
-                            </tr>`;
-                        tableBody.innerHTML += row;
-                    });
-                })
-                .catch(error => console.error('Error fetching Buy Orders:', error));
-        }
-    
-        // Function to update Sell Orders table
-        function updateSellOrders() {
-            fetch('get_sell_orders/')  // URL for fetching Sell Orders
-                .then(response => response.json())
-                .then(data => {
-                    const tableBody = document.querySelector('#sell-orders tbody');
-                    tableBody.innerHTML = ''; // Clear existing rows
+            // Convert grouped orders into an array and sort
+            const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                const priceA = parseFloat(a[0]);
+                const priceB = parseFloat(b[0]);
+                return priceB - priceA; // Higher price first
+            });
 
-                    // Sort orders by price (ascending), then by timestamp (ascending)
-                    const sortedOrders = data.sell_orders.sort((a, b) => {
-                        if (a.price !== b.price) {
-                            return a.price - b.price; // Lower price first
-                        }
-                        return new Date(a.timestamp) - new Date(b.timestamp); // Earlier timestamp first
-                    });
+            // Populate the table with grouped and sorted orders
+            sortedOrders.forEach(([price, details]) => {
+                const row = `
+                    <tr>
+                        <td>${price}</td>
+                        <td>${details.quantity}</td>
+                        <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+        })
+        .catch(error => console.error('Error fetching Buy Orders:', error));
+}
 
-                    // Populate the table with sorted orders
-                    sortedOrders.forEach(order => {
-                        const row = `
-                            <tr>
-                                <td>${order.price}</td>
-                                <td>${order.quantity}</td>
-                                <td>${order.is_matched ? 'Matched' : 'Unmatched'}</td>
-                            </tr>`;
-                        tableBody.innerHTML += row;
-                    });
-                })
-                .catch(error => console.error('Error fetching Sell Orders:', error));
-        }
+// Function to update Sell Orders table
+function updateSellOrders() {
+    fetch('get_sell_orders/') // URL for fetching Sell Orders
+        .then(response => response.json())
+        .then(data => {
+            const tableBody = document.querySelector('#sell-orders tbody');
+            tableBody.innerHTML = ''; // Clear existing rows
+
+            // Group orders by price
+            const groupedOrders = {};
+            data.sell_orders.forEach(order => {
+                if (!groupedOrders[order.price]) {
+                    groupedOrders[order.price] = { quantity: 0, is_matched: order.is_matched };
+                }
+                groupedOrders[order.price].quantity += order.quantity;
+            });
+
+            // Convert grouped orders into an array and sort
+            const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                const priceA = parseFloat(a[0]);
+                const priceB = parseFloat(b[0]);
+                return priceA - priceB; // Lower price first
+            });
+
+            // Populate the table with grouped and sorted orders
+            sortedOrders.forEach(([price, details]) => {
+                const row = `
+                    <tr>
+                        <td>${price}</td>
+                        <td>${details.quantity}</td>
+                        <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
+                    </tr>`;
+                tableBody.innerHTML += row;
+            });
+        })
+        .catch(error => console.error('Error fetching Sell Orders:', error));
+}
 
         // Function to update Recent Trades table
         function updateRecentTrades() {
@@ -183,17 +242,19 @@
                 })
                 .catch(error => console.error('Error fetching Recent Trades:', error));
         }
-    
+
         //Periodic updates for all tables
         document.addEventListener('DOMContentLoaded', function () {
-            setInterval(updateBuyOrders, 1000);  // Update every 5 seconds
-            setInterval(updateSellOrders, 1000); // Update every 5 seconds
-            setInterval(updateRecentTrades, 1000); // Update every 5 seconds
-            setInterval(updateBestBid, 1000);  // Update every 5 seconds for Best Bid
-            setInterval(updateBestAsk, 1000);  // Update every 5 seconds for Best Ask
-        });
+    setInterval(() => {
+        updateBuyOrders();
+        updateSellOrders();
+        updateRecentTrades();
+        updateBestBid();
+        updateBestAsk();
+    }, 1000);  // Update every 1 second
+ });
+
     </script>
-    
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>
