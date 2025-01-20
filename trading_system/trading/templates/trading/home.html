@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order form</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+        :root {
+            --background: #121212;
+            --card-bg: #1f1f1f;
+            --accent-gradient: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+            --accent-purple: #9d50bb;
+            --accent-blue: #6e48aa;
+            --accent-green: #43cea2;
+            --accent-pink: #f7797d;
+            --text-primary: #ffffff;
+            --text-secondary: #b0bec5;
+            --card-border: #37474f;
+            --table-header-bg: #37474f;
+            --table-row-hover: rgba(255, 126, 95, 0.1);
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            background: var(--accent-gradient);
+            color: var(--card-bg);
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 15px 0;
+        }
+
+        .stat-card .label {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .stat-card .change {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .change.positive {
+            color: var(--accent-green);
+        }
+
+        .change.negative {
+            color: var(--accent-pink);
+        }
+
+        form {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 35px;
+            margin-bottom: 30px;
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-control {
+            background: var(--background);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            border-radius: 12px;
+            padding: 15px 18px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-gradient);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-weight: 500;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-dark {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+            padding: 15px 30px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-dark:hover {
+            border-color: var(--accent-gradient);
+            transform: translateY(-2px);
+        }
+
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .table {
+            width: 100%;
+            background: var(--card-bg);
+            border-collapse: collapse;
+            border-spacing: 0;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .table th, .table td {
+            padding: 20px 25px;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .table th {
+            background: var(--table-header-bg);
+            text-align: left;
+            font-weight: 600;
+            color: var(--accent-gradient);
+        }
+
+        .table tbody tr:hover {
+            background: linear-gradient(135deg, #6ab1ec, #4f9dd5);
+        }
+
+        .table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        h1, h2, h3 {
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 20px;
+        }
+
+        .welcome-message {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 35px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .welcome-message h1 {
+            margin-bottom: 10px;
+        }
+
+        .welcome-message p {
+            color: var(--text-secondary);
+            margin: 0;
+        }
+
+        label {
+            color: var(--text-secondary);
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        select {
+            appearance: none;
+            background: var(--background);
+            border: 1px solid var(--card-border);
+            color: var(--text-primary);
+            border-radius: 12px;
+            padding: 15px 18px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        select:focus {
+            border-color: var(--accent-gradient);
+            outline: none;
+        }
+
+        .alert {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 20px 25px;
+            margin-bottom: 20px;
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        .alert-success {
+            border-left: 4px solid var(--accent-green);
+        }
+
+        .alert-info {
+            border-left: 4px solid var(--accent-purple);
+        }
+
+        .alert-warning {
+            border-left: 4px solid var(--accent-pink);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .pagination a {
+            margin: 0 5px;
+            padding: 10px 20px;
+            text-decoration: none;
+            color: var(--accent-gradient);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination a.active {
+            background: var(--accent-gradient);
+            color: var(--card-bg);
+        }
+
+        .pagination a:hover {
+            background: var(--accent-gradient);
+            color: var(--card-bg);
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>
+    <script>
+        function updatePrice() {
+            var orderType = document.querySelector('select[name="order_type"]').value;
+            var orderMode = document.querySelector('select[name="order_mode"]').value;
+            var priceField = document.querySelector('input[name="price"]');
+            var priceLabel = document.getElementById('price-label');
+
+            if (orderMode === 'MARKET') {
+                priceField.disabled = true;
+                priceLabel.textContent = "Price (Auto-Fetched):";
+
+                if (orderType === 'BUY') {
+                    fetch('/orderbook/get_best_ask/')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to fetch best ask price');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.best_ask && data.best_ask.price !== undefined) {
+                                priceField.value = data.best_ask.price;
+                                priceLabel.placeholder = data.best_ask.price;
+                            } else {
+                                priceField.value = 'Unavailable';
+                                priceLabel.placeholder = "Unavailable";
+                            }
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            priceField.value = 'Error fetching price';
+                            priceField.placeholder = 'Error fetching price';
+                        });
+                } else if (orderType === 'SELL') {
+                    fetch('/orderbook/get_best_bid/')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to fetch best bid price');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.best_bid && data.best_bid.price !== undefined) {
+                                priceField.value = data.best_bid.price;
+                                priceField.placeholder = data.best_bid.price;
+                            } else {
+                                priceField.value = 'Unavailable';
+                                priceField.textContent = 'Unavailable';
+                            }
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            priceField.value = 'Error fetching price';
+                            priceField.placeholder = 'Error fetching price';
+                        });
+                }
+            } else {
+                priceField.disabled = false;
+                priceField.placeholder = 'Enter Value';
+                priceLabel.textContent = "Price (Enter Value):";
+                priceField.value = '';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var orderTypeField = document.querySelector('select[name="order_type"]');
+            var orderModeField = document.querySelector('select[name="order_mode"]');
+            orderTypeField.addEventListener('change', updatePrice);
+            orderModeField.addEventListener('change', updatePrice);
+            updatePrice();
+        });
+
+        window.onload = function() {
+            setTimeout(function() {
+                const flashMessages = document.querySelectorAll('#flash-messages .alert');
+                flashMessages.forEach(function(msg) {
+                    msg.style.transition = "opacity 1s ease-out";
+                    msg.style.opacity = 0;
+                    setTimeout(function() {
+                        msg.style.display = 'none';
+                    }, 1000);
+                });
+            }, 3000);
+        };
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="welcome-message">
+            <h1>
+                Welcome, <span class="change positive">{{ user.username }}!</span>
+            </h1>
+            
+            <p style="color: var(--accent-gradient);">Your trading dashboard is ready to go. Place your orders and track your activity easily.</p>
+        </div>
+
+        {% if messages %}
+            <div id="flash-messages">
+                <div class="alert alert-success" role="alert">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="stat-grid text-center d-flex justify-content-center align-items-center" style="margin-bottom: 30px;">
+            <a href="{% url 'orderbook' %}" class="btn btn-dark" target="_blank">
+                <span class="change positive">Go to Order Book</span>
+            </a>
+        </div>
+        
+        <form method="post">
+            {% csrf_token %}
+            <h1><span class="change positive">Place Order</span></h1>
+            <div class="form-group">
+                <label for="order_type" style="color: var(--accent-gradient);">Order Type</label>
+                <select name="order_type" class="form-control">
+                    <option value="BUY">Buy</option>
+                    <option value="SELL">Sell</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="order_mode" style="color: var(--accent-gradient);">Order Mode</label>
+                <select name="order_mode" class="form-control">
+                    <option value="MARKET">Market</option>
+                    <option value="LIMIT">Limit</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="quantity" style="color: var(--accent-gradient);">Quantity</label>
+                <input type="number" name="quantity" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label id="price-label" for="price" style="color: var(--accent-gradient);">Price</label>
+                <input type="number" step="0.01" name="price" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Order</button>
+        </form>
+
+        <h2 class="change positive">Recent Orders</h2>
+        <div class="table-container">
+            {% if orders %}
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Order Type</th>
+                            <th>Order Mode</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in orders %}
+                            <tr>
+                                <td>{{ order.order_type }}</td>
+                                <td>{{ order.order_mode }}</td>
+                                <td>{{ order.quantity }}</td>
+                                <td>{{ order.price }}</td>
+                                <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="alert alert-warning">
+                    <p>No orders found. Place your first order above.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
