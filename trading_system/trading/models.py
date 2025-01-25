@@ -24,6 +24,7 @@ class Order(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_matched = models.BooleanField(default=False)
+    is_ioc = models.BooleanField(default=False)
 
 class Trade(models.Model):
     buyer = models.ForeignKey(User, related_name='buy_trades', on_delete=models.CASCADE)

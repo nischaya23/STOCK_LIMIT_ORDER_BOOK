@@ -44,6 +44,7 @@ def home(request):
         order_type = request.POST.get('order_type')
         order_mode = request.POST.get('order_mode')
         quantity = int(request.POST.get('quantity'))
+        is_ioc=request.POST.get('is_ioc')=='True'
 
         price = None
         try:
@@ -72,6 +73,7 @@ def home(request):
                 quantity=quantity,
                 price=price,
                 is_matched=False,
+                is_ioc=is_ioc,
                 user=user  # Ensure the order is associated with the logged-in user
             )
             new_order.save()
