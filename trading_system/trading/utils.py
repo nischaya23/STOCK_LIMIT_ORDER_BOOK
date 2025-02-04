@@ -37,6 +37,53 @@ def match_order(new_order):
                 is_matched=False
             ).order_by('-price', 'timestamp')
 
+        # Immediate or Cancellation (IOC) orders
+        if new_order.is_ioc:
+            # Track executed quantity for IOC orders
+            executed_quantity=0
+            
+            for opposite_order in opposite_orders:
+                if new_order.quantity<=0:
+                    break
+                
+                match_quantity=min(new_order.quantity,opposite_order.quantity)
+                
+                # Create a trade entry for the matched orders
+                Trade.objects.create(
+                    buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
+                    seller=opposite_order.user if new_order.order_type == 'BUY' else new_order.user,
+                    quantity=match_quantity,
+                    price=opposite_order.price,
+                    timestamp=timezone.now()
+                )
+                
+                # Update quantities
+                executed_quantity += match_quantity
+                new_order.quantity -= match_quantity
+                opposite_order.quantity -= match_quantity
+                
+                # Update disclosed quantity if needed
+                if(opposite_order.disclosed<opposite_order.quantity):
+                    opposite_order.disclosed=opposite_order.quantity
+                if(new_order.disclosed<new_order.quantity):
+                    new_order.disclosed=new_order.quantity
+                
+                # Update opposite order status
+                if opposite_order.quantity == 0:
+                    opposite_order.is_matched = True
+                opposite_order.save()
+            
+            # Handle IOC order after matching
+            if executed_quantity>0:
+                # Partially executed:save with executed quantity and mark as matched
+                new_order.quantity=0  # Discard remaining quantity
+                new_order.is_matched=True
+                new_order.save()
+            else:
+                # Completely unexecuted:delete the order
+                new_order.delete()
+                return
+
         # Try to match with the opposite orders
         if(new_order.order_mode=="LIMIT"):
             remaining_quantity = new_order.quantity
@@ -66,6 +113,10 @@ def match_order(new_order):
                 remaining_quantity -= match_quantity
                 opposite_order.quantity -= match_quantity
                 new_order.quantity -= match_quantity
+                if(opposite_order.disclosed<opposite_order.quantity):
+                    opposite_order.disclosed=opposite_order.quantity
+                if(new_order.disclosed<new_order.quantity):
+                    new_order.disclosed=new_order.quantity
                 opposite_order.save()
                 new_order.save()
 
@@ -110,6 +161,10 @@ def match_order(new_order):
                         remaining_quantity-=match_quantity
                         opposite_order.quantity -= match_quantity
                         new_order.quantity -= match_quantity
+                        if(opposite_order.disclosed<opposite_order.quantity):
+                            opposite_order.disclosed=opposite_order.quantity
+                        if(new_order.disclosed<new_order.quantity):
+                            new_order.disclosed=new_order.quantity
                         opposite_order.is_matched = True
                         opposite_order.save()
                         new_order.save()
@@ -124,6 +179,10 @@ def match_order(new_order):
                         remaining_quantity-=match_quantity
                         opposite_order.quantity -= match_quantity
                         new_order.quantity -= match_quantity
+                        if(opposite_order.disclosed<opposite_order.quantity):
+                            opposite_order.disclosed=opposite_order.quantity
+                        if(new_order.disclosed<new_order.quantity):
+                            new_order.disclosed=new_order.quantity
                         new_order.is_matched=True
                         opposite_order.save()
                         new_order.save()
