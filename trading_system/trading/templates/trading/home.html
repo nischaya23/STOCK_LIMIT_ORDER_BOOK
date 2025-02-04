@@ -436,6 +436,13 @@
                 <input type="number" name="quantity" class="form-control" required>
             </div>
             <div class="form-group">
+                <label for="is_ioc">Immediate or Cancellation Order:</label>
+                <select name="is_ioc" class="form-control">
+                    <option value="False">No</option>
+                    <option value="True">Yes</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label id="price-label" for="price" style="color: var(--accent-gradient);">Price</label>
                 <input type="number" step="0.01" name="price" class="form-control">
             </div>
