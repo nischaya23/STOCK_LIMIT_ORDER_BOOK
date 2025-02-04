@@ -382,10 +382,64 @@
                     msg.style.opacity = 0;
                     setTimeout(function() {
                         msg.style.display = 'none';
-                    }, 1000);
+                    }, 5000);
                 });
-            }, 3000);
+            }, 5000);
         };
+
+
+
+    function toggleFields() {
+        const stoplossOrder = document.getElementById("Stoploss_order").value;
+        const targetPrice = document.getElementById("Target_price");
+        const durationValue = document.getElementById("duration_value");
+        const durationUnit = document.getElementById("duration_unit");
+        const targetPriceGroup = document.getElementById("target_price_group");
+        const durationGroup = document.getElementById("duration_group");
+        const endTimeField = document.getElementById("end_time");
+
+        if (stoplossOrder === "YES") {
+            targetPriceGroup.style.display = "block";
+            durationGroup.style.display = "block";
+            targetPrice.disabled = false;
+            durationValue.disabled = false;
+            durationUnit.disabled = false;
+        } else {
+            targetPriceGroup.style.display = "none";
+            durationGroup.style.display = "none";
+            targetPrice.value = 0;  // Default value when NO
+            endTimeField.value = new Date().toLocaleString();  // Current time when NO
+            targetPrice.disabled = true;
+            durationValue.disabled = true;
+            durationUnit.disabled = true;
+        }
+    }
+
+    function updateEndTime() {
+        const duration = parseInt(document.getElementById("duration_value").value);
+        const unit = document.getElementById("duration_unit").value;
+
+        if (isNaN(duration) || duration <= 0) {
+            document.getElementById("end_time").value = "";
+            return;
+        }
+
+        let currentTime = new Date();
+        if (unit === "minutes") {
+            currentTime.setMinutes(currentTime.getMinutes() + duration);
+        } else if (unit === "hours") {
+            currentTime.setHours(currentTime.getHours() + duration);
+        } else if (unit === "days") {
+            currentTime.setDate(currentTime.getDate() + duration);
+        }
+
+        // Format the computed end time
+        let endTimeString = currentTime.toLocaleString();
+
+        // Save the computed end time
+        document.getElementById("end_time").value = endTimeString;
+    }
+
     </script>
 </head>
 <body>
@@ -412,6 +466,9 @@
             <a href="{% url 'orderbook' %}" class="btn btn-dark" target="_blank">
                 <span class="change positive">Go to Order Book</span>
             </a>
+            <a href="{% url 'modify_order' %}" class="btn btn-dark" target="_blank">
+                <span class="change positive">Modify Order</span>
+            </a>
         </div>
         
         <form method="post">
@@ -431,9 +488,31 @@
                     <option value="LIMIT">Limit</option>
                 </select>
             </div>
+            
+            
+            <div class="form-group">
+                <label for="Stoploss_order" style="color: var(--accent-gradient);">Stoploss order</label>
+                <select name="Stoploss_order" id="Stoploss_order" class="form-control" onchange="toggleFields()">
+                    <option value="YES">Yes</option>
+                    <option value="NO">No</option>
+                </select>
+            </div>
+            
+            <div class="form-group" id="target_price_group">
+                <label for="Target_price" style="color: var(--accent-gradient);">Target Price</label>
+                <input type="number" step="0.01" name="Target_price" id="Target_price" class="form-control" disabled>
+            </div>
+            
+
+
+
             <div class="form-group">
                 <label for="quantity" style="color: var(--accent-gradient);">Quantity</label>
                 <input type="number" name="quantity" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="disclosed_quantity" style="color: var(--accent-gradient);">Disclosed Quantity</label>
+                <input type="number" name="disclosed_quantity" class="form-control" required>
             </div>
             <div class="form-group">
                 <label id="price-label" for="price" style="color: var(--accent-gradient);">Price</label>
@@ -441,6 +520,14 @@
             </div>
             <button type="submit" class="btn btn-primary">Submit Order</button>
         </form>
+
+        {% if messages %}
+        <div class="alert alert-danger">
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
 
         <h2 class="change positive">Recent Orders</h2>
         <div class="table-container">
@@ -451,8 +538,10 @@
                             <th>Order Type</th>
                             <th>Order Mode</th>
                             <th>Quantity</th>
+                            <th>Disclosed</th>
                             <th>Price</th>
                             <th>Status</th>
+                            <th>ID</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -461,8 +550,10 @@
                                 <td>{{ order.order_type }}</td>
                                 <td>{{ order.order_mode }}</td>
                                 <td>{{ order.quantity }}</td>
+                                <td>{{ order.disclosed }}</td>
                                 <td>{{ order.price }}</td>
                                 <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
+                                <td>{{order.id}}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
