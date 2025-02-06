@@ -8,3 +8,11 @@ class UserRegisterForm(UserCreationForm):
     class Meta:
         model = User
         fields = ['username', 'email', 'password1', 'password2']
+
+
+class CSVUploadForm(forms.Form):
+    csv_file = forms.FileField()
+from django import forms
+
+class UserDeleteCSVForm(forms.Form):
+    csv_file = forms.FileField()
