@@ -31,6 +31,7 @@ class Order(models.Model):
     is_matched = models.BooleanField(default=False)
  
 
+    is_ioc = models.BooleanField(default=False)
 
 class Trade(models.Model):
     buyer = models.ForeignKey(User, related_name='buy_trades', on_delete=models.CASCADE)

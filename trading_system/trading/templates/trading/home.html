@@ -469,6 +469,14 @@
             <a href="{% url 'modify_order' %}" class="btn btn-dark" target="_blank">
                 <span class="change positive">Modify Order</span>
             </a>
+            {% if request.user.is_superuser %}
+            <a href="{% url 'bulk_user_upload' %}" class="btn btn-dark" target="_blank">
+                <span class="change positive">Bulk User Generation</span>
+            </a>
+            <a href="{% url 'bulk_user_delete' %}" class="btn btn-dark" target="_blank">
+                <span class="change positive">Bulk User Deletion</span>
+            </a>
+            {% endif %}
         </div>
         
         <form method="post">
@@ -513,6 +521,11 @@
             <div class="form-group">
                 <label for="disclosed_quantity" style="color: var(--accent-gradient);">Disclosed Quantity</label>
                 <input type="number" name="disclosed_quantity" class="form-control" required>
+                <label for="is_ioc">Immediate or Cancellation Order:</label>
+                <select name="is_ioc" class="form-control">
+                    <option value="False">No</option>
+                    <option value="True">Yes</option>
+                </select>
             </div>
             <div class="form-group">
                 <label id="price-label" for="price" style="color: var(--accent-gradient);">Price</label>
