@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modify Order</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+
+        :root {
+            --background: #1e1e2f;
+            --card-bg: #2b2b3c;
+            --accent-gradient: linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%);
+            --text-primary: #ffffff;
+            --text-secondary: #b0bec5;
+            --card-border: #37474f;
+            --highlight-color: #ff7e5f;
+        }
+
+        body {
+            background: var(--background);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .dashboard-title {
+            color: var(--highlight-color);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-group label {
+            color: var(--highlight-color);
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: var(--highlight-color);
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="dashboard-title">Modify Order</h2>
+        
+        <div class="card">
+            <div class="card-body">
+                <h4>Edit Order Quantity</h4>
+                <form id="modify-order-form">
+                    <div class="form-group">
+                        <label for="order-id">Order ID</label>
+                        <input type="number" class="form-control" id="order-id" name="order-id" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" class="form-control" id="quantity" name="quantity" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="disclose">Disclosed Quantity</label>
+                        <input type="number" class="form-control" id="disclose" name="disclose" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('modify-order-form');
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                // Get the values from the form inputs
+                const orderId = document.getElementById('order-id').value;
+                const quantity = document.getElementById('quantity').value;
+                const discloseQ = document.getElementById('disclose').value;
+
+
+                // Check if both orderId and quantity are valid numbers
+                if (!orderId || !quantity || isNaN(orderId) || isNaN(quantity) || isNaN(discloseQ) || isNaN(discloseQ)) {
+                    alert('Please enter valid values for Order ID, Quantity and diisclose quantity.');
+                    return;
+                }
+
+                // Create the request payload as JSON
+                const payload = {
+                    order_id: parseInt(orderId),
+                    quantity: parseInt(quantity),
+                    disclosed_quantity: parseInt(discloseQ),
+                };
+
+                // Send the data via a POST request
+                fetch('/modify_order/update_prev_order/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}',  // Add CSRF token for security
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Order updated successfully!');
+                    } else {
+                        alert('Error updating order: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('There was an error updating the order.');
+                });
+            });
+        });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

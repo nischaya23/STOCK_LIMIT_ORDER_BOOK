@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orderbook Dashboard</title>
+    <title>Modify Orders</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
@@ -31,7 +31,7 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 2800px;
             margin: 0 auto;
             animation: fadeIn 1s ease-in-out;
         }
@@ -107,25 +107,8 @@
 </head>
 <body>
     <div class="container">
-        <h2 class="dashboard-title">Orderbook Dashboard</h2>
+        <h2 class="dashboard-title">Modify Order</h2>
         
-        <!-- Best Bid and Best Ask Cards -->
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card p-3">
-                    <h4>Best Bid</h4>
-                    <p id="best-bid">Loading...</p>
-                </div>
-            </div>
-            <div class="col-md-6 mb-4">
-                <div class="card p-3">
-                    <h4>Best Ask</h4>
-                    <p id="best-ask">Loading...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Buy and Sell Orders -->
         <div class="row">
             <div class="col-md-6 mb-4">
                 <h3>Buy Orders</h3>
@@ -136,10 +119,11 @@
                                 <th>Price</th>
                                 <th>Quantity</th>
                                 <th>Status</th>
+                                <th>Modify</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="3">Loading...</td></tr>
+                            <tr><td colspan="4">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -153,68 +137,17 @@
                                 <th>Price</th>
                                 <th>Quantity</th>
                                 <th>Status</th>
+                                <th>Modify</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="3">Loading...</td></tr>
+                            <tr><td colspan="4">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
-
-        <!-- Recent Trades -->
-        <div class="row">
-            <div class="col-12">
-                <h3>Recent Trades</h3>
-                <div class="table-responsive">
-                    <table id="trades" class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>Buyer</th>
-                                <th>Seller</th>
-                                <th>Price</th>
-                                <th>Quantity</th>
-                                <th>Timestamp</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td colspan="5">Loading...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        function updateBestBid() {
-            fetch('get_best_bid/')  // URL for fetching Best Bid
-                .then(response => response.json())
-                .then(data => {
-                    const bestBidContainer = document.querySelector('#best-bid');
-                    if (data.best_bid.price !== null) {
-                        bestBidContainer.innerHTML = `Price: ${data.best_bid.price} | Quantity: ${data.best_bid.disclosed}`;
-                    } else {
-                        bestBidContainer.innerHTML = 'No bids available';
-                    }
-                })
-                .catch(error => console.error('Error fetching Best Bid:', error));
-        }
-
-        function updateBestAsk() {
-            fetch('get_best_ask/')  // URL for fetching Best Ask
-                .then(response => response.json())
-                .then(data => {
-                    const bestAskContainer = document.querySelector('#best-ask');
-                    if (data.best_ask.price !== null) {
-                        bestAskContainer.innerHTML = `Price: ${data.best_ask.price} | Quantity: ${data.best_ask.disclosed}`;
-                    } else {
-                        bestAskContainer.innerHTML = 'No asks available';
-                    }
-                })
-                .catch(error => console.error('Error fetching Best Ask:', error));
-        }
 
         function updateBuyOrders() {
             fetch('get_buy_orders/') // URL for fetching Buy Orders
@@ -227,7 +160,7 @@
                     const groupedOrders = {};
                     data.buy_orders.forEach(order => {
                         if (!groupedOrders[order.price]) {
-                            groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched, id: order.id};
+                            groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched };
                         }
                         groupedOrders[order.price].disclosed += order.disclosed;
                     });
@@ -246,6 +179,9 @@
                                 <td>${price}</td>
                                 <td>${details.disclosed}</td>
                                 <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
+                                <td>
+                                    <a href="{% url 'modify_page' %}" class="btn btn-primary btn-sm">Modify</a>
+                                </td>
                             </tr>`;
                         tableBody.innerHTML += row;
                     });
@@ -253,81 +189,61 @@
                 .catch(error => console.error('Error fetching Buy Orders:', error));
         }
 
-
         function updateSellOrders() {
-    fetch('get_sell_orders/') // URL for fetching Sell Orders
-        .then(response => response.json())
-        .then(data => {
-            console.log('Fetched Data:', data); // Debugging line to check the data
-
-            const tableBody = document.querySelector('#sell-orders tbody');
-            tableBody.innerHTML = ''; // Clear existing rows
-
-            // Group orders by price
-            const groupedOrders = {};
-            data.sell_orders.forEach(order => {
-                console.log('Processing Order:', order); // Debugging line to check individual order data
-
-                // Ensure disclosed and price are numbers
-                const disclosed = parseFloat(order.disclosed);
-                const price = parseFloat(order.price);
-
-                // Check if values are valid numbers
-                if (isNaN(disclosed) || isNaN(price)) {
-                    console.warn('Invalid data for order:', order); // Log any invalid data
-                    return;
-                }
-
-                if (!groupedOrders[price]) {
-                    groupedOrders[price] = { disclosed: 0, is_matched: order.is_matched };
-                }
-                groupedOrders[price].disclosed += disclosed; // Use disclosed
-            });
-
-            // Convert grouped orders into an array and sort
-            const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
-                const priceA = parseFloat(a[0]);
-                const priceB = parseFloat(b[0]);
-                return priceA - priceB; // Lower price first
-            });
-
-            // Populate the table with grouped and sorted orders
-            sortedOrders.forEach(([price, details]) => {
-                const row = `
-                    <tr>
-                        <td>${price}</td>
-                        <td>${details.disclosed}</td> <!-- Display disclosed quantity -->
-                        <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
-                    </tr>`;
-                tableBody.innerHTML += row;
-            });
-        })
-        .catch(error => console.error('Error fetching Sell Orders:', error));
-}
-
-
-
-        function updateRecentTrades() {
-            fetch('get_recent_trades/')  // URL for fetching Recent Trades
+            fetch('get_sell_orders/') // URL for fetching Sell Orders
                 .then(response => response.json())
                 .then(data => {
-                    const tableBody = document.querySelector('#trades tbody');
+                    console.log('Fetched Data:', data); // Debugging line to check the data
+
+                    const tableBody = document.querySelector('#sell-orders tbody');
                     tableBody.innerHTML = ''; // Clear existing rows
 
-                    data.trades.forEach(trade => {
+                    // Group orders by price
+                    const groupedOrders = {};
+                    data.sell_orders.forEach(order => {
+                        console.log('Processing Order:', order); // Debugging line to check individual order data
+
+                        // Ensure disclosed and price are numbers
+                        const disclosed = parseFloat(order.disclosed);
+                        const price = parseFloat(order.price);
+
+                        // Check if values are valid numbers
+                        if (isNaN(disclosed) || isNaN(price)) {
+                            console.warn('Invalid data for order:', order); // Log any invalid data
+                            return;
+                        }
+
+                        if (!groupedOrders[price]) {
+                            groupedOrders[price] = { disclosed: 0, is_matched: order.is_matched };
+                        }
+                        groupedOrders[price].disclosed += disclosed; // Use disclosed
+                    });
+
+                    // Convert grouped orders into an array and sort
+                    const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                        const priceA = parseFloat(a[0]);
+                        const priceB = parseFloat(b[0]);
+                        return priceA - priceB; // Lower price first
+                    });
+
+                    // Populate the table with grouped and sorted orders
+                    sortedOrders.forEach(([price, details]) => {
                         const row = `
                             <tr>
-                                <td>${trade.buyer}</td>
-                                <td>${trade.seller}</td>
-                                <td>${trade.price}</td>
-                                <td>${trade.quantity}</td>
-                                <td>${trade.timestamp}</td>
+                                <td>${price}</td>
+                                <td>${details.disclosed}</td>
+                                <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
+                                <td>
+                                    <a href="{% url 'modify_page' %}" class="btn btn-primary btn-sm">Modify</a>
+                                </td>
                             </tr>`;
                         tableBody.innerHTML += row;
                     });
                 })
-                .catch(error => console.error('Error fetching Recent Trades:', error));
+                .catch(error => console.error('Error fetching Sell Orders:', error));
         }
+
+
 
         // Periodic updates for all tables
         document.addEventListener('DOMContentLoaded', function () {
@@ -337,7 +253,7 @@
                 updateRecentTrades();
                 updateBestBid();
                 updateBestAsk();
-            }, 1000);  // Update every 1 second
+            }, 3000);  // Update every 3 second
         });
     </script>
 
@@ -346,3 +262,6 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
+
+
+
