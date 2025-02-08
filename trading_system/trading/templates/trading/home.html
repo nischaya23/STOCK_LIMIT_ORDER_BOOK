@@ -412,6 +412,14 @@
             <a href="{% url 'orderbook' %}" class="btn btn-dark" target="_blank">
                 <span class="change positive">Go to Order Book</span>
             </a>
+            {% if request.user.is_superuser %}
+            <a href="{% url 'bulk_user_upload' %}" class="btn btn-dark" target="_blank">
+                <span class="change positive">Bulk User Generation</span>
+            </a>
+            <a href="{% url 'bulk_user_delete' %}" class="btn btn-dark" target="_blank">
+                <span class="change positive">Bulk User Deletion</span>
+            </a>
+            {% endif %}
         </div>
         
         <form method="post">

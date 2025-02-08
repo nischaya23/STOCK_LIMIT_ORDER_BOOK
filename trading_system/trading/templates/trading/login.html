@@ -144,10 +144,25 @@
     .register a:hover {
       text-decoration: underline;
     }
+    #flash-messages .alert {
+    background-color: greenyellow; /* Custom Yellow */
+    color: #333; /* Text color */
+}
+
   </style>
 </head>
 <body>
+  
   <div class="wrapper">
+    {% if messages %}
+    <div id="flash-messages" class="container">
+        <div class="alert alert-danger" role="alert">  <!-- Changed to alert-danger -->
+            {% for message in messages %}
+                <p>{{ message }}</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endif %}
     <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
       <h2>Welcome Back!</h2>
