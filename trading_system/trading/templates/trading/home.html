@@ -476,6 +476,12 @@
             <a href="{% url 'bulk_user_delete' %}" class="btn btn-dark" target="_blank">
                 <span class="change positive">Bulk User Deletion</span>
             </a>
+            
+            <!-- Pause/Resume Link -->
+            <a href="#" id="pause-toggle" class="btn btn-dark">
+                <span id="pause-text">{% if paused %}Paused{% else %}Resumed{% endif %}</span>
+            </a>
+                    
             {% endif %}
         </div>
         
@@ -531,9 +537,73 @@
                 <label id="price-label" for="price" style="color: var(--accent-gradient);">Price</label>
                 <input type="number" step="0.01" name="price" class="form-control">
             </div>
-            <button type="submit" class="btn btn-primary">Submit Order</button>
+            <!-- <button type="submit" id="submit-btn" class="btn btn-primary">Submit Order</button> -->
+            <button type="submit" class="btn btn-primary" id="submit-btn" {% if paused %}disabled{% endif %}>Submit</button>
         </form>
-
+<!--         
+        {% if is_admin %}
+            <button id="pause-resume-btn" onclick="togglePause()">
+                {% if paused %} Resume {% else %} Pause {% endif %}
+            </button>
+        {% endif %} -->
+        
+        
+        
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                let protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+                let socket = new WebSocket(protocol + window.location.host + "/ws/pause/");
+    
+                socket.onopen = function () {
+                    console.log("✅ WebSocket Connected!");
+                };
+    
+                socket.onmessage = function (event) {
+                    let data = JSON.parse(event.data);
+                    let isPaused = data.paused;
+    
+                    let pauseText = document.getElementById("pause-text");
+                    let submitBtn = document.getElementById("submit-btn");
+    
+                    if (pauseText) {
+                        pauseText.innerText = isPaused ? "Paused" : "Resumed";
+                    }
+    
+                    if (submitBtn) {
+                        submitBtn.disabled = isPaused;
+                    }
+                };
+    
+                function togglePause(event) {
+                    event.preventDefault();
+                    let pauseText = document.getElementById("pause-text");
+    
+                    if (!pauseText) return;
+    
+                    let isCurrentlyPaused = pauseText.innerText === "Paused";
+                    socket.send(JSON.stringify({ "paused": !isCurrentlyPaused }));
+                }
+    
+                socket.onerror = function (error) {
+                    console.error("❌ WebSocket Error:", error);
+                };
+    
+                socket.onclose = function () {
+                    console.warn("⚠️ WebSocket Disconnected! Attempting reconnect...");
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                };
+    
+                let pauseLink = document.getElementById("pause-toggle");
+                if (pauseLink) {
+                    pauseLink.addEventListener("click", togglePause);
+                }
+            });
+        </script>
+        
+        
+        
         {% if messages %}
         <div class="alert alert-danger">
             {% for message in messages %}
