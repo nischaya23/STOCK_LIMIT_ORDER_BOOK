@@ -22,5 +22,6 @@ urlpatterns = [
 
     path('modify_order/', views.modify_order_page, name='modify_order'),
     path('modify_order/update_prev_order/', views.update_prev_order, name='update_prev_order'),
+    path("toggle-pause/", views.toggle_pause, name="toggle_pause"),
 ]
 

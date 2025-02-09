@@ -36,10 +36,24 @@ def get_best_bid(request):
         return JsonResponse({'best_bid': best_bid})
     return JsonResponse({'best_bid': None})
 
+
+paused=False
+def toggle_pause(request):
+    global paused
+    if request.method == "POST":
+        data = json.loads(request.body)
+        paused = data.get("paused", False)  # Update global variable
+        return JsonResponse({"paused": paused})
+
+
 @login_required  # Ensure the user is logged in before accessing this view
 def home(request):
+    global paused
+    print("IN HOME", paused)
     user = request.user  # Get the logged-in user
+    is_admin = user.is_authenticated and user.is_staff
     user, created = User.objects.get_or_create(username=user)
+
 
     if request.method == "POST":
         order_type = request.POST.get('order_type')
@@ -143,11 +157,11 @@ def home(request):
             render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
         
 
-
+    
     # Fetch orders associated with the user
     orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
-
-    return render(request, 'trading/home.html', {'user': user, 'orders': orders})
+    
+    return render(request, 'trading/home.html', {'user': user, 'orders': orders, 'is_admin':is_admin, 'paused':paused})
 
 
 

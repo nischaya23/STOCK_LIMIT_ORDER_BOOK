@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'trading'
+    'channels', # branch database_pallav  -> for asgi callign
+    'trading',
+    'daphne',  # Required for ASGI
 ]
 
 MIDDLEWARE = [
@@ -72,10 +74,29 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = "trading_system.wsgi.application"
+ASGI_APPLICATION = "TRADING_SYSTEM.asgi.application"
 
+# """note for branch pallav_database
+# For production, use Daphne (an ASGI server):
+
+# daphne -b 0.0.0.0 -p 8000 ajax_demo.asgi:application
+# If you're using Gunicorn, you'll need daphne or uvicorn alongside it for WebSockets."""
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+
+#"""note for branch pallav_database
+# below code is to use redis cache which is iportant when using asgi callbacks in production
+# """
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",  # For production, use Redis
+    },
+}
+
+
 
 DATABASES = {
 'default': {
