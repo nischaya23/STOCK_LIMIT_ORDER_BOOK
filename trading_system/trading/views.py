@@ -25,6 +25,9 @@ def fetch_best_bid():
 def get_best_ask(request):
     if request.method == 'GET':
     # Fetch the best ask price (lowest available price for a buy order)
+        # best_ask = Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'quantity').first()
+        
+        # To display the disclosed quantity only
         best_ask = Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'disclosed').first()
         return JsonResponse({'best_ask': best_ask})
     return JsonResponse({'best_ask': None})
@@ -32,6 +35,9 @@ def get_best_ask(request):
 def get_best_bid(request):
     if request.method == 'GET':
     # Fetch the best bid price (highest available price for a sell order)
+        # best_bid = Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'quantity').first()
+        
+        # To display the disclosed quantity only
         best_bid = Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'disclosed').first()
         return JsonResponse({'best_bid': best_bid})
     return JsonResponse({'best_bid': None})
