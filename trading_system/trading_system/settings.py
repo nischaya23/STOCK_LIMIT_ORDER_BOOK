@@ -38,10 +38,10 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    'daphne',  # Required for ASGI
     "django.contrib.staticfiles",
     'channels', # branch database_pallav  -> for asgi callign
     'trading',
-    'daphne',  # Required for ASGI
 ]
 
 MIDDLEWARE = [
@@ -74,7 +74,7 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = "trading_system.wsgi.application"
-ASGI_APPLICATION = "TRADING_SYSTEM.asgi.application"
+ASGI_APPLICATION = "trading_system.asgi.application"
 
 # """note for branch pallav_database
 # For production, use Daphne (an ASGI server):
