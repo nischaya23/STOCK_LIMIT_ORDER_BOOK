@@ -38,6 +38,7 @@ def match_order(new_order):
             ).order_by('-price', 'timestamp')
 
         # Immediate or Cancellation (IOC) orders
+        # Delete the order instantly if no quantity is executed
         if new_order.is_ioc:
             # Track executed quantity for IOC orders
             executed_quantity=0
