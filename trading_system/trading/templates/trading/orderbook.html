@@ -217,27 +217,31 @@
         }
 
         function updateBuyOrders() {
-            fetch('get_buy_orders/')
+            fetch('get_buy_orders/') // URL for fetching Buy Orders
                 .then(response => response.json())
                 .then(data => {
                     const tableBody = document.querySelector('#buy-orders tbody');
-                    tableBody.innerHTML = '';
-        
+                    tableBody.innerHTML = ''; // Clear existing rows
+
                     // Group orders by price
                     const groupedOrders = {};
                     data.buy_orders
-                        .filter(order => !order.is_ioc) //Exclude IOC orders
+                        .filter(order => !order.is_ioc) // Exclude IOC orders
                         .forEach(order => {
                             if (!groupedOrders[order.price]) {
-                                groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched };
+                                groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched, id: order.id};
                             }
                             groupedOrders[order.price].disclosed += order.disclosed;
                         });
-        
+
                     // Convert grouped orders into an array and sort
-                    const sortedOrders = Object.entries(groupedOrders).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
-        
-                    // Populate the table
+                    const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                        const priceA = parseFloat(a[0]);
+                        const priceB = parseFloat(b[0]);
+                        return priceB - priceA; // Higher price first
+                    });
+
+                    // Populate the table with grouped and sorted orders
                     sortedOrders.forEach(([price, details]) => {
                         const row = `
                             <tr>
@@ -250,47 +254,53 @@
                 })
                 .catch(error => console.error('Error fetching Buy Orders:', error));
         }
-        
-        
+
+
         function updateSellOrders() {
-            fetch('get_sell_orders/')
+            fetch('get_sell_orders/') // URL for fetching Sell Orders
                 .then(response => response.json())
                 .then(data => {
-                    console.log('Fetched Data:', data);
-        
+                    console.log('Fetched Data:', data); // Debugging line to check the data
+
                     const tableBody = document.querySelector('#sell-orders tbody');
-                    tableBody.innerHTML = '';
-        
+                    tableBody.innerHTML = ''; // Clear existing rows
+
                     // Group orders by price
                     const groupedOrders = {};
                     data.sell_orders
                         .filter(order => !order.is_ioc) // Exclude IOC orders
                         .forEach(order => {
-                            console.log('Processing Order:', order);
-        
+                            console.log('Processing Order:', order); // Debugging line to check individual order data
+
+                            // Ensure disclosed and price are numbers
                             const disclosed = parseFloat(order.disclosed);
                             const price = parseFloat(order.price);
-        
+
+                            // Check if values are valid numbers
                             if (isNaN(disclosed) || isNaN(price)) {
-                                console.warn('Invalid data for order:', order);
+                                console.warn('Invalid data for order:', order); // Log any invalid data
                                 return;
                             }
-        
+
                             if (!groupedOrders[price]) {
                                 groupedOrders[price] = { disclosed: 0, is_matched: order.is_matched };
                             }
-                            groupedOrders[price].disclosed += disclosed;
+                            groupedOrders[price].disclosed += disclosed; // Use disclosed
                         });
-        
+
                     // Convert grouped orders into an array and sort
-                    const sortedOrders = Object.entries(groupedOrders).sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]));
-        
-                    // Populate the table
+                    const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                        const priceA = parseFloat(a[0]);
+                        const priceB = parseFloat(b[0]);
+                        return priceA - priceB; // Lower price first
+                    });
+
+                    // Populate the table with grouped and sorted orders
                     sortedOrders.forEach(([price, details]) => {
                         const row = `
                             <tr>
                                 <td>${price}</td>
-                                <td>${details.disclosed}</td>
+                                <td>${details.disclosed}</td> <!-- Display disclosed quantity -->
                                 <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
                             </tr>`;
                         tableBody.innerHTML += row;
@@ -299,8 +309,6 @@
                 .catch(error => console.error('Error fetching Sell Orders:', error));
         }
         
-
-
 
         function updateRecentTrades() {
             fetch('get_recent_trades/')  // URL for fetching Recent Trades
