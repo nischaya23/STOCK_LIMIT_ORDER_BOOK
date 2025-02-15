@@ -64,9 +64,9 @@ def match_order(new_order):
                 opposite_order.quantity -= match_quantity
                 
                 # Update disclosed quantity if needed
-                if(opposite_order.disclosed<opposite_order.quantity):
+                if(opposite_order.disclosed>opposite_order.quantity):
                     opposite_order.disclosed=opposite_order.quantity
-                if(new_order.disclosed<new_order.quantity):
+                if(new_order.disclosed>new_order.quantity):
                     new_order.disclosed=new_order.quantity
                 
                 # Update opposite order status
@@ -114,9 +114,9 @@ def match_order(new_order):
                 remaining_quantity -= match_quantity
                 opposite_order.quantity -= match_quantity
                 new_order.quantity -= match_quantity
-                if(opposite_order.disclosed<opposite_order.quantity):
+                if(opposite_order.disclosed>opposite_order.quantity):
                     opposite_order.disclosed=opposite_order.quantity
-                if(new_order.disclosed<new_order.quantity):
+                if(new_order.disclosed>new_order.quantity):
                     new_order.disclosed=new_order.quantity
                 opposite_order.save()
                 new_order.save()
@@ -162,9 +162,9 @@ def match_order(new_order):
                         remaining_quantity-=match_quantity
                         opposite_order.quantity -= match_quantity
                         new_order.quantity -= match_quantity
-                        if(opposite_order.disclosed<opposite_order.quantity):
+                        if(opposite_order.disclosed>opposite_order.quantity):
                             opposite_order.disclosed=opposite_order.quantity
-                        if(new_order.disclosed<new_order.quantity):
+                        if(new_order.disclosed>new_order.quantity):
                             new_order.disclosed=new_order.quantity
                         opposite_order.is_matched = True
                         opposite_order.save()
@@ -180,9 +180,9 @@ def match_order(new_order):
                         remaining_quantity-=match_quantity
                         opposite_order.quantity -= match_quantity
                         new_order.quantity -= match_quantity
-                        if(opposite_order.disclosed<opposite_order.quantity):
+                        if(opposite_order.disclosed>opposite_order.quantity):
                             opposite_order.disclosed=opposite_order.quantity
-                        if(new_order.disclosed<new_order.quantity):
+                        if(new_order.disclosed>new_order.quantity):
                             new_order.disclosed=new_order.quantity
                         new_order.is_matched=True
                         opposite_order.save()
