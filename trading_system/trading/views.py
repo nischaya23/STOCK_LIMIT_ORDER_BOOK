@@ -109,7 +109,7 @@ def home(request):
                     order_type=order_type,
                     order_mode=order_mode,
                     quantity=quantity,
-                    disclosed=quantity,
+                    disclosed=disclosed,
                     price=price,
                     is_ioc=is_ioc,
                     is_matched=False,
