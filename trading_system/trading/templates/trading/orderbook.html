@@ -229,7 +229,7 @@
                         if (!groupedOrders[order.price]) {
                             groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched, id: order.id};
                         }
-                        groupedOrders[order.price].disclosed += order.disclosed;
+                        groupedOrders[order.price].disclosed += (Math.min(order.disclosed,order.quantity));
                     });
 
                     // Convert grouped orders into an array and sort
@@ -281,7 +281,7 @@
                 if (!groupedOrders[price]) {
                     groupedOrders[price] = { disclosed: 0, is_matched: order.is_matched };
                 }
-                groupedOrders[price].disclosed += disclosed; // Use disclosed
+                groupedOrders[order.price].disclosed += (Math.min(order.disclosed,order.quantity)); // Use disclosed
             });
 
             // Convert grouped orders into an array and sort
