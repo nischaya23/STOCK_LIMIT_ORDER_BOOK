@@ -5,7 +5,8 @@ from django.db import transaction
 from django.contrib.auth.decorators import login_required
 import json
 from django.contrib import messages
-
+from django.views.decorators.csrf import csrf_protect
+from django.http import HttpResponseNotAllowed
 from .utils import match_order  # Assuming match_order is in utils.py
 from django.http import JsonResponse
 
@@ -65,7 +66,7 @@ def home(request):
         order_type = request.POST.get('order_type')
         order_mode = request.POST.get('order_mode')
         quantity = int(request.POST.get('quantity'))
-        disclosed = int(request.POST.get('disclosed_quantity'))
+        disclosed = int(quantity*float(request.POST.get('disclosed_quantity'))/100)
         stoploss_order =  request.POST.get('Stoploss_order')
         target_price = request.POST.get('Target_price')
         is_ioc=request.POST.get('is_ioc')=='True'
@@ -75,7 +76,8 @@ def home(request):
 
         if disclosed==0:
             disclosed=quantity
-
+        # elif disclosed>quantity:
+            # disclosed=quantity
                 # Perform the custom validation
 
 
@@ -109,7 +111,7 @@ def home(request):
                     order_type=order_type,
                     order_mode=order_mode,
                     quantity=quantity,
-                    disclosed=quantity,
+                    disclosed=disclosed,
                     price=price,
                     is_ioc=is_ioc,
                     is_matched=False,
@@ -260,20 +262,23 @@ def update_prev_order(request):
 
 
 
-
+# @csrf_protect
 def clear_database(request):
-    Order.objects.all().delete()
-    Trade.objects.all().delete()
-    return redirect('login')
+    if request.method == "POST":
+        Order.objects.all().delete()
+        Trade.objects.all().delete()
+        return redirect('home')
+    return HttpResponseNotAllowed(['POST'])
+
 
 def get_buy_orders(request):
     if request.method == 'GET':
-        buy_orders = Order.objects.filter(order_type='BUY', is_matched = False).values('price','disclosed', 'is_matched', 'id')
+        buy_orders = Order.objects.filter(order_type='BUY', is_matched = False).values('price','disclosed', 'is_matched', 'id',"quantity")
         return JsonResponse({'buy_orders': list(buy_orders)})
 
 def get_sell_orders(request):
     if request.method == 'GET':
-        sell_orders = Order.objects.filter(order_type='SELL', is_matched = False).values('price','disclosed', 'is_matched')
+        sell_orders = Order.objects.filter(order_type='SELL', is_matched = False).values('price','disclosed', 'is_matched',"quantity", 'id')
         return JsonResponse({'sell_orders': list(sell_orders)})
 
 def get_recent_trades(request):

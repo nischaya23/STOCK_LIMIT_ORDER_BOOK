@@ -479,9 +479,14 @@
             
             <!-- Pause/Resume Link -->
             <a href="#" id="pause-toggle" class="btn btn-dark">
-                <span id="pause-text">{% if paused %}Paused{% else %}Resumed{% endif %}</span>
+                <span id="pause-text" class="change positive">{% if paused %}Paused{% else %}Resumed{% endif %}</span>
             </a>
-                    
+            <a>
+            <form action="{% url 'clear_database' %}" method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Clear Database</button>
+            </form>
+            </a>
             {% endif %}
         </div>
         
@@ -507,12 +512,13 @@
             <div class="form-group">
                 <label for="Stoploss_order" style="color: var(--accent-gradient);">Stoploss order</label>
                 <select name="Stoploss_order" id="Stoploss_order" class="form-control" onchange="toggleFields()">
-                    <option value="YES">Yes</option>
                     <option value="NO">No</option>
+                    <option value="YES">Yes</option>
                 </select>
             </div>
             
-            <div class="form-group" id="target_price_group">
+            <div class="form-group" id="target_price_group" style="display: none;">
+                
                 <label for="Target_price" style="color: var(--accent-gradient);">Target Price</label>
                 <input type="number" step="0.01" name="Target_price" id="Target_price" class="form-control" disabled>
             </div>
@@ -525,9 +531,11 @@
                 <input type="number" name="quantity" class="form-control" required>
             </div>
             <div class="form-group">
-                <label for="disclosed_quantity" style="color: var(--accent-gradient);">Disclosed Quantity</label>
+                <label for="disclosed_quantity" style="color: var(--accent-gradient);">Disclosed Quantity %</label>
                 <input type="number" name="disclosed_quantity" class="form-control" required>
-                <label for="is_ioc">Immediate or Cancellation Order:</label>
+            </div>
+            <div class="form-group">
+                <label for="is_ioc" style="color: var(--accent-gradient);">Immediate or Cancellation Order:</label>
                 <select name="is_ioc" class="form-control">
                     <option value="False">No</option>
                     <option value="True">Yes</option>
@@ -603,14 +611,14 @@
         </script>
         
         
-        
-        {% if messages %}
-        <div class="alert alert-danger">
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
-        </div>
-        {% endif %}
+<!--          -->
+        <!-- {% if messages %} -->
+        <!-- <div class="alert alert-danger"> -->
+            <!-- {% for message in messages %} -->
+                <!-- <p>{{ message }}</p> -->
+            <!-- {% endfor %} -->
+        <!-- </div> -->
+        <!-- {% endif %} -->
 
         <h2 class="change positive">Recent Orders</h2>
         <div class="table-container">
