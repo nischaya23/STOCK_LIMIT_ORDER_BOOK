@@ -158,7 +158,10 @@ def home(request):
 
     
     # Fetch orders associated with the user
-    orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
+    # orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
+    
+    orders = Order.objects.filter(user=user).filter(Q(is_ioc=False) | Q(is_matched=True))
+
     
     return render(request, 'trading/home.html', {'user': user, 'orders': orders, 'is_admin':is_admin, 'paused':paused})
 
