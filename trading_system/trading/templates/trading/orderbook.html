@@ -226,7 +226,7 @@
                     // Group orders by price
                     const groupedOrders = {};
                     data.buy_orders
-                        .filter(order => !order.is_ioc) // Exclude IOC orders (Do not add IOC orders in orderbook) 
+                        .filter(order => !order.is_ioc) // Exclude IOC orders(Do not add IOC orders in orderbook) 
                         .forEach(order => {
                             if (!groupedOrders[order.price]) {
                                 groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched, id: order.id};
@@ -268,7 +268,7 @@
                     // Group orders by price
                     const groupedOrders = {};
                     data.sell_orders
-                        .filter(order => !order.is_ioc) // Exclude IOC orders (Do not add IOC orders in orderbook) 
+                        .filter(order => !order.is_ioc) // Exclude IOC orders(Do not add IOC orders in orderbook) 
                         .forEach(order => {
                             console.log('Processing Order:', order); // Debugging line to check individual order data
 
