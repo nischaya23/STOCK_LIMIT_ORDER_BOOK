@@ -56,9 +56,6 @@ def home(request):
         if disclosed==0:
             disclosed=quantity
 
-                # Perform the custom validation
-
-
         try:
             if order_mode == "LIMIT":
                 price = float(request.POST.get('price', 0))  # Default to 0 if no price is provided
@@ -201,7 +198,7 @@ def modify_order_page(request):
     
     # Retrieve all trades (you may filter or sort as needed)
     trades = Trade.objects.all().order_by('-timestamp')  # Sorting trades by timestamp
-    
+
     # Display both buy and sell orders in the orderbook, along with trades
     return render(request, 'trading/modify_order.html', {
         'buy_orders': buy_orders,

@@ -19,7 +19,6 @@ urlpatterns = [
     path('modify/get_best_bid/', views.get_best_bid, name='get_best_bid'),
     path('modify/get_buy_orders/', views.get_buy_orders, name='get_buy_orders'),
     path('modify/get_sell_orders/', views.get_sell_orders, name='get_sell_orders'),
-
     path('modify_order/', views.modify_order_page, name='modify_order'),
     path('modify_order/update_prev_order/', views.update_prev_order, name='update_prev_order'),
 ]
