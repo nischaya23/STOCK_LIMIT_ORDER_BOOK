@@ -127,18 +127,18 @@ def home(request):
                     messages.success(request, 'Your Stoploss order has been placed successfully!')
 
 
-            new_order = Order(
-                order_type=order_type,
-                order_mode=order_mode,
-                quantity=quantity,
-                price=price,
-                is_matched=False,
-                is_ioc=is_ioc,
-                user=user  # Ensure the order is associated with the logged-in user
-            )
-            new_order.save()
-            match_order(new_order)
-            messages.success(request, 'Your order has been placed successfully!')
+            # new_order = Order(
+            #     order_type=order_type,
+            #     order_mode=order_mode,
+            #     quantity=quantity,
+            #     price=price,
+            #     is_matched=False,
+            #     is_ioc=is_ioc,
+            #     user=user  # Ensure the order is associated with the logged-in user
+            # )
+            # new_order.save()
+            # match_order(new_order)
+            # messages.success(request, 'Your order has been placed successfully!')
         except Exception as e:
             render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
         
