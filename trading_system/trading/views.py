@@ -101,6 +101,7 @@ def home(request):
                     new_order.save()
                     match_order(new_order)
                     messages.success(request, 'Your order has been placed successfully!')
+                    return redirect('/home')
 
             else:
                 new_order = Stoploss_Order (
@@ -122,6 +123,7 @@ def home(request):
                     messages.success(request, "Stoploss Order placed successfully!")
                     new_order.save()
                     messages.success(request, 'Your Stoploss order has been placed successfully!')
+                    return redirect('/home')
 
 
             # new_order = Order(
@@ -172,6 +174,7 @@ def orderbook(request):
         'trades': trades  # Pass trades to the template
     })
 
+@login_required
 def modify(request):
     # Retrieve unmatched buy orders (sorted by price in descending order)
     buy_orders = Order.objects.filter(is_matched=False, order_type='BUY').order_by('-price')
@@ -189,7 +192,8 @@ def modify(request):
         'best_ask': sell_orders.first() if sell_orders else None,
         'trades': trades  # Pass trades to the template
     })
-    
+
+@login_required  
 def modify_order_page(request):
     # Retrieve unmatched buy orders (sorted by price in descending order)
     buy_orders = Order.objects.filter(is_matched=False, order_type='BUY').order_by('-price')
@@ -206,7 +210,7 @@ def modify_order_page(request):
         'trades': trades  # Pass trades to the template
     })
      
-
+@login_required  
 def update_prev_order(request):
     if request.method == 'POST':
         try:

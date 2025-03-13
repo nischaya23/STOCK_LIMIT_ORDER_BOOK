@@ -1,85 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600&display=swap");
-
+    /* Reset & Variables */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: "Open Sans", sans-serif;
+    }
+    :root {
+      --bg-color: #0f0f0f;
+      --card-bg: rgba(30, 30, 30, 0.8);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --neon: #0ff;
+      --accent: #ff0;
+      --text-color: #e0e0e0;
+      --input-bg: rgba(0, 0, 0, 0.2);
     }
 
+    /* Background & Body */
     body {
+      background: linear-gradient(45deg, #000, #1a1a1a, #000);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      width: 100%;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      overflow: hidden;
+      font-family: 'Orbitron', sans-serif;
+      color: var(--text-color);
       position: relative;
+      padding: 20px;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
-    body::before {
-      content: "";
-      position: absolute;
-      width: 200%;
-      height: 200%;
-      background: url("https://source.unsplash.com/random/1920x1080?technology") no-repeat center;
-      background-size: cover;
-      filter: blur(20px);
-      transform: translate(-50%, -50%);
-      top: 50%;
-      left: 50%;
-      z-index: -1;
-    }
-
+    /* Wrapper Card (Glassmorphism) */
     .wrapper {
       width: 100%;
       max-width: 400px;
-      background: rgba(0, 0, 0, 0.7);
+      background: var(--card-bg);
       border-radius: 12px;
       padding: 40px;
       text-align: center;
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
       animation: fadeIn 1s ease-in-out;
     }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(-20px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Headings */
     h2 {
       font-size: 2.2rem;
-      color: #fff;
+      color: var(--neon);
       margin-bottom: 10px;
       text-transform: uppercase;
       letter-spacing: 2px;
     }
-
     .sub-heading {
       font-size: 1rem;
-      color: #ddd;
+      color: var(--text-color);
       margin-bottom: 20px;
       letter-spacing: 1px;
     }
 
+    /* Input Fields */
     .input-field {
       position: relative;
       border-bottom: 2px solid rgba(255, 255, 255, 0.5);
       margin: 20px 0;
       transition: all 0.3s ease;
     }
-
     .input-field label {
       position: absolute;
       top: 50%;
@@ -90,7 +93,6 @@
       pointer-events: none;
       transition: 0.3s ease;
     }
-
     .input-field input {
       width: 100%;
       height: 40px;
@@ -98,71 +100,72 @@
       border: none;
       outline: none;
       font-size: 16px;
-      color: #fff;
+      color: var(--text-color);
     }
-
     .input-field input:focus ~ label,
     .input-field input:valid ~ label {
       font-size: 0.9rem;
       top: -5px;
-      color: #fff;
+      color: var(--neon);
     }
-
     .input-field input:focus {
-      border-bottom-color: #fff;
+      border-bottom-color: var(--neon);
     }
 
+    /* Button */
     button {
       width: 100%;
       padding: 12px;
-      background: linear-gradient(to right, #43cea2, #185a9d);
+      background: linear-gradient(45deg, var(--neon), var(--accent));
       border: none;
       border-radius: 6px;
-      color: #fff;
-      font-weight: 600;
+      color: var(--bg-color);
+      font-weight: bold;
       font-size: 16px;
       cursor: pointer;
       transition: all 0.3s ease;
+      margin-top: 20px;
     }
-
     button:hover {
-      background: linear-gradient(to right, #185a9d, #43cea2);
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+      background: linear-gradient(45deg, var(--accent), var(--neon));
+      box-shadow: 0 4px 10px rgba(0, 255, 255, 0.7);
     }
 
+    /* Register Link */
     .register {
       margin-top: 20px;
-      color: #ddd;
+      color: var(--text-color);
     }
-
     .register a {
-      color: #43cea2;
+      color: var(--neon);
       text-decoration: none;
-      font-weight: 500;
+      font-weight: bold;
     }
-
     .register a:hover {
       text-decoration: underline;
     }
-    #flash-messages .alert {
-    background-color: greenyellow; /* Custom Yellow */
-    color: #333; /* Text color */
-}
 
+    /* Flash Messages */
+    #flash-messages .alert {
+      background-color: #ffeb3b;
+      color: #333;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
-  
   <div class="wrapper">
     {% if messages %}
-    <div id="flash-messages" class="container">
-        <div class="alert alert-danger" role="alert">  <!-- Changed to alert-danger -->
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
+      <div id="flash-messages">
+        <div class="alert alert-danger" role="alert">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
         </div>
-    </div>
-{% endif %}
+      </div>
+    {% endif %}
     <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
       <h2>Welcome Back!</h2>
