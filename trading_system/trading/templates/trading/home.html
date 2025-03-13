@@ -297,7 +297,7 @@
       const stoplossOrder = document.getElementById("Stoploss_order").value;
       const targetPrice = document.getElementById("Target_price");
       const targetPriceGroup = document.getElementById("target_price_group");
-
+      // targetPrice.disabled = true;xx 
       if (stoplossOrder === "YES") {
         targetPriceGroup.style.display = "block";
         targetPrice.disabled = false;
@@ -320,7 +320,7 @@
     <div id="flash-messages">
       <div class="flash-message">
         {% for message in messages %}
-        <p>{{ message }}</p>
+        <p><span style="color: var(--neon);">{{ message }}</span></p>
         {% endfor %}
       </div>
     </div>
@@ -329,9 +329,10 @@
     <div class="grid-links">
       <a href="{% url 'orderbook' %}" target="_blank">Order Book</a>
       <a href="{% url 'modify_order' %}" target="_blank">Modify Order</a>
+      <a href="{% url 'password_reset' %}" >Reset Password</a>
       {% if request.user.is_superuser %}
-      <a href="{% url 'bulk_user_upload' %}" target="_blank">Bulk User Upload</a>
-      <a href="{% url 'bulk_user_delete' %}" target="_blank">Bulk User Deletion</a>
+      <a href="{% url 'bulk_user_upload' %}" >Bulk User Upload</a>
+      <a href="{% url 'bulk_user_delete' %}" >Bulk User Deletion</a>
       {% endif %}
     </div>
 
@@ -355,11 +356,11 @@
       <div class="input-group">
         <label for="Stoploss_order">Stoploss Order</label>
         <select name="Stoploss_order" id="Stoploss_order" class="form-control" onchange="toggleFields()">
-          <option value="YES">Yes</option>
           <option value="NO">No</option>
+          <option value="YES">Yes</option>
         </select>
       </div>
-      <div class="input-group" id="target_price_group">
+      <div class="input-group" id="target_price_group" style="display: none;">
         <label for="Target_price">Target Price</label>
         <input type="number" step="0.01" name="Target_price" id="Target_price" class="form-control" disabled>
       </div>
@@ -386,13 +387,13 @@
     </form>
 
     <div class="card">
-      {% if messages %}
+      <!-- {% if messages %}
       <div class="flash-message alert-danger">
         {% for message in messages %}
         <p>{{ message }}</p>
         {% endfor %}
       </div>
-      {% endif %}
+      {% endif %} -->
 
       <h2 class="change positive">Recent Orders</h2>
       <div class="table-container">
