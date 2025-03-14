@@ -506,27 +506,15 @@
           </thead>
           <tbody>
             {% for order in orders %}
-              {% if not order.is_ioc %}
-                <tr>
-                  <td>{{ order.order_type }}</td>
-                  <td>{{ order.order_mode }}</td>
-                  <td>{{ order.quantity }}</td>
-                  <td>{{ order.disclosed }}</td>
-                  <td>{{ order.price }}</td>
-                  <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
-                  <td>{{ order.id }}</td>
-                </tr>
-              {% elif order.is_ioc and order.is_matched %}
-                <tr>
-                  <td>{{ order.order_type }}</td>
-                  <td>{{ order.order_mode }}</td>
-                  <td>{{ order.quantity }}</td>
-                  <td>{{ order.disclosed }}</td>
-                  <td>{{ order.price }}</td>
-                  <td>Matched</td>
-                  <td>{{ order.id }}</td>
-                </tr>
-              {% endif %}
+              <tr>
+                <td>{{ order.order_type }}</td>
+                <td>{{ order.order_mode }}</td>
+                <td>{{ order.quantity }}</td>
+                <td>{{ order.disclosed }}</td>
+                <td>{{ order.price }}</td>
+                <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
+                <td>{{ order.id }}</td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>

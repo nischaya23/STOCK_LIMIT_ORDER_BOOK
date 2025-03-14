@@ -3,6 +3,7 @@ from django.utils import timezone
 from .models import Order, Trade
 
 def match_order(new_order):
+    print("match")
     # Begin a transaction to ensure atomicity
     with transaction.atomic():
         # For a BUY limit order, we are looking for SELL orders at the same price or lower
@@ -78,9 +79,13 @@ def match_order(new_order):
                 # Partially executed:save with executed quantity and mark as matched
                 new_order.quantity=0  # Discard remaining quantity
                 new_order.is_matched=True
+                new_order.disclosed=0 
+                print("saved1")
                 new_order.save()
+                return  # To prevent further processing
             else:
                 # Completely unexecuted:delete the order
+                print("delete1")
                 new_order.delete()
                 return
 
