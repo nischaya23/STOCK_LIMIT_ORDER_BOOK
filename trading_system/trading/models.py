@@ -15,15 +15,20 @@ class Order(models.Model):
     ORDER_MODE_CHOICES = [
         ('LIMIT', 'Limit'),
         ('MARKET', 'Market'),
+        ('STOP_MARKET', 'Stop Market'),
+        ('STOP_LIMIT', 'Stop Limit')
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     order_type = models.CharField(max_length=10, choices=ORDER_TYPE_CHOICES)
-    order_mode = models.CharField(max_length=10, choices=ORDER_MODE_CHOICES)
+    order_mode = models.CharField(max_length=15, choices=ORDER_MODE_CHOICES)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    stop_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    limit_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_matched = models.BooleanField(default=False)
+    is_triggered = models.BooleanField(default=False)  
 
 class Trade(models.Model):
     buyer = models.ForeignKey(User, related_name='buy_trades', on_delete=models.CASCADE)

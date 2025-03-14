@@ -5,58 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orderbook</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .explanation-box {
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .stop-market-row {
+            background-color: #fff3cd;
+        }
+        .stop-limit-row {
+            background-color: #d1ecf1;
+        }
+    </style>
 </head>
 <body>
     <div class="container mt-5">
         <h2>Orderbook</h2>
         
+        <!-- Stop Loss Explanation -->
+        <div class="explanation-box">
+            <h4>Understanding Stop Loss Orders</h4>
+            <p><strong>Stop Market Order:</strong> When the stop price is hit, the order becomes a market order and executes at the best available price.</p>
+            <p><strong>Stop Limit Order:</strong> When the stop price is hit, a limit order is placed. The trade will only execute at the limit price or better.</p>
+        </div>
+        
         <!-- Best Bid and Best Ask -->
         <div class="row mb-3">
             <div class="col">
                 <h4>Best Bid:</h4>
-                <p id = "best-bid"> </p>
+                <p id="best-bid"></p>
             </div>
             <div class="col">
                 <h4>Best Ask:</h4>
-                <p id = "best-ask"></p>
+                <p id="best-ask"></p>
             </div>
         </div>
-    <script>
+        <script>
             function updateBestBid() {
                 fetch('get_best_bid/')  // URL for fetching Best Bid
                     .then(response => response.json())
                     .then(data => {
                         const bestBidContainer = document.querySelector('#best-bid');
-                            if (data.best_bid.price !== null) {
+                        if (data.best_bid && data.best_bid.price !== null) {
                             bestBidContainer.innerHTML = `Price: ${data.best_bid.price} | Quantity: ${data.best_bid.quantity}`;
-                                } 
-                            else{
-                        bestBidContainer.innerHTML = 'No bids available';
-                      }
+                        } 
+                        else {
+                            bestBidContainer.innerHTML = 'No bids available';
+                        }
                     })
-                .catch(error => console.error('Error fetching Best Bid:', error));
+                    .catch(error => console.error('Error fetching Best Bid:', error));
             }
-          
-        
+            
             //Function to update Best Ask
             function updateBestAsk() {
-            fetch('get_best_ask/')  // URL for fetching Best Ask
-                .then(response => response.json())
-                .then(data => {
-                    const bestAskContainer = document.querySelector('#best-ask');
-                    if (data.best_ask_price !== null) {
-                        bestAskContainer.innerHTML = `Price: ${data.best_ask.price} | Quantity: ${data.best_ask.quantity}`;
-                    } else {
-                        bestAskContainer.innerHTML = 'No asks available';
-                    }
-                })
-                .catch(error => console.error('Error fetching Best Ask:', error));
-        }
-    </script>
+                fetch('get_best_ask/')  // URL for fetching Best Ask
+                    .then(response => response.json())
+                    .then(data => {
+                        const bestAskContainer = document.querySelector('#best-ask');
+                        if (data.best_ask && data.best_ask.price !== null) {
+                            bestAskContainer.innerHTML = `Price: ${data.best_ask.price} | Quantity: ${data.best_ask.quantity}`;
+                        } else {
+                            bestAskContainer.innerHTML = 'No asks available';
+                        }
+                    })
+                    .catch(error => console.error('Error fetching Best Ask:', error));
+            }
+        </script>
 
         <!-- Buy Orders -->
         <h3>Buy Orders</h3>
-        <table id = "buy-orders" class="table table-striped">
+        <table id="buy-orders" class="table table-striped">
             <thead>
                 <tr>
                     <th>Price</th>
@@ -65,16 +85,46 @@
                 </tr>
             </thead>
             <tbody>
-
             </tbody>
         </table>
 
         <!-- Sell Orders -->
         <h3>Sell Orders</h3>
-        <table id = "sell-orders" class="table table-striped">
+        <table id="sell-orders" class="table table-striped">
             <thead>
                 <tr>
                     <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <!-- Stop Market Orders -->
+        <h3>Active Stop Market Orders</h3>
+        <table id="stop-market-orders" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order Type</th>
+                    <th>Stop Price</th>
+                    <th>Quantity</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+
+        <!-- Stop Limit Orders -->
+        <h3>Active Stop Limit Orders</h3>
+        <table id="stop-limit-orders" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Order Type</th>
+                    <th>Stop Price</th>
+                    <th>Limit Price</th>
                     <th>Quantity</th>
                     <th>Status</th>
                 </tr>
@@ -103,79 +153,142 @@
     <script>
         // Function to update Buy Orders table
         function updateBuyOrders() {
-    fetch('get_buy_orders/') // URL for fetching Buy Orders
-        .then(response => response.json())
-        .then(data => {
-            const tableBody = document.querySelector('#buy-orders tbody');
-            tableBody.innerHTML = ''; // Clear existing rows
+            fetch('get_buy_orders/') // URL for fetching Buy Orders
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#buy-orders tbody');
+                    tableBody.innerHTML = ''; // Clear existing rows
 
-            // Group orders by price
-            const groupedOrders = {};
-            data.buy_orders.forEach(order => {
-                if (!groupedOrders[order.price]) {
-                    groupedOrders[order.price] = { quantity: 0, is_matched: order.is_matched };
-                }
-                groupedOrders[order.price].quantity += order.quantity;
-            });
+                    // Group orders by price
+                    const groupedOrders = {};
+                    data.buy_orders.forEach(order => {
+                        if (!groupedOrders[order.price]) {
+                            groupedOrders[order.price] = { quantity: 0, is_matched: order.is_matched };
+                        }
+                        groupedOrders[order.price].quantity += order.quantity;
+                    });
 
-            // Convert grouped orders into an array and sort
-            const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
-                const priceA = parseFloat(a[0]);
-                const priceB = parseFloat(b[0]);
-                return priceB - priceA; // Higher price first
-            });
+                    // Convert grouped orders into an array and sort
+                    const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                        const priceA = parseFloat(a[0]);
+                        const priceB = parseFloat(b[0]);
+                        return priceB - priceA; // Higher price first
+                    });
 
-            // Populate the table with grouped and sorted orders
-            sortedOrders.forEach(([price, details]) => {
-                const row = `
-                    <tr>
-                        <td>${price}</td>
-                        <td>${details.quantity}</td>
-                        <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
-                    </tr>`;
-                tableBody.innerHTML += row;
-            });
-        })
-        .catch(error => console.error('Error fetching Buy Orders:', error));
-}
+                    // Populate the table with grouped and sorted orders
+                    sortedOrders.forEach(([price, details]) => {
+                        const row = `
+                            <tr>
+                                <td>${price}</td>
+                                <td>${details.quantity}</td>
+                                <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
+                            </tr>`;
+                        tableBody.innerHTML += row;
+                    });
+                })
+                .catch(error => console.error('Error fetching Buy Orders:', error));
+        }
 
-// Function to update Sell Orders table
-function updateSellOrders() {
-    fetch('get_sell_orders/') // URL for fetching Sell Orders
-        .then(response => response.json())
-        .then(data => {
-            const tableBody = document.querySelector('#sell-orders tbody');
-            tableBody.innerHTML = ''; // Clear existing rows
+        // Function to update Sell Orders table
+        function updateSellOrders() {
+            fetch('get_sell_orders/') // URL for fetching Sell Orders
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#sell-orders tbody');
+                    tableBody.innerHTML = ''; // Clear existing rows
 
-            // Group orders by price
-            const groupedOrders = {};
-            data.sell_orders.forEach(order => {
-                if (!groupedOrders[order.price]) {
-                    groupedOrders[order.price] = { quantity: 0, is_matched: order.is_matched };
-                }
-                groupedOrders[order.price].quantity += order.quantity;
-            });
+                    // Group orders by price
+                    const groupedOrders = {};
+                    data.sell_orders.forEach(order => {
+                        if (!groupedOrders[order.price]) {
+                            groupedOrders[order.price] = { quantity: 0, is_matched: order.is_matched };
+                        }
+                        groupedOrders[order.price].quantity += order.quantity;
+                    });
 
-            // Convert grouped orders into an array and sort
-            const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
-                const priceA = parseFloat(a[0]);
-                const priceB = parseFloat(b[0]);
-                return priceA - priceB; // Lower price first
-            });
+                    // Convert grouped orders into an array and sort
+                    const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+                        const priceA = parseFloat(a[0]);
+                        const priceB = parseFloat(b[0]);
+                        return priceA - priceB; // Lower price first
+                    });
 
-            // Populate the table with grouped and sorted orders
-            sortedOrders.forEach(([price, details]) => {
-                const row = `
-                    <tr>
-                        <td>${price}</td>
-                        <td>${details.quantity}</td>
-                        <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
-                    </tr>`;
-                tableBody.innerHTML += row;
-            });
-        })
-        .catch(error => console.error('Error fetching Sell Orders:', error));
-}
+                    // Populate the table with grouped and sorted orders
+                    sortedOrders.forEach(([price, details]) => {
+                        const row = `
+                            <tr>
+                                <td>${price}</td>
+                                <td>${details.quantity}</td>
+                                <td>${details.is_matched ? 'Matched' : 'Unmatched'}</td>
+                            </tr>`;
+                            tableBody.innerHTML += row;
+                    });
+                })
+                .catch(error => console.error('Error fetching Sell Orders:', error));
+        }
+
+        // Function to update Stop Market Orders table
+        function updateStopMarketOrders() {
+            fetch('get_stop_market_orders/') // URL for fetching Stop Market Orders
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#stop-market-orders tbody');
+                    tableBody.innerHTML = ''; // Clear existing rows
+
+                    if (data.stop_market_orders && data.stop_market_orders.length > 0) {
+                        data.stop_market_orders.forEach(order => {
+                            const row = `
+                                <tr class="stop-market-row">
+                                    <td>${order.order_type}</td>
+                                    <td>${order.stop_price}</td>
+                                    <td>${order.quantity}</td>
+                                    <td>Waiting to Trigger</td>
+                                </tr>`;
+                            tableBody.innerHTML += row;
+                        });
+                    } else {
+                        // If no stop market orders, display a message
+                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No active stop market orders</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching Stop Market Orders:', error);
+                    const tableBody = document.querySelector('#stop-market-orders tbody');
+                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Error loading stop market orders</td></tr>';
+                });
+        }
+
+        // Function to update Stop Limit Orders table
+        function updateStopLimitOrders() {
+            fetch('get_stop_limit_orders/') // URL for fetching Stop Limit Orders
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.querySelector('#stop-limit-orders tbody');
+                    tableBody.innerHTML = ''; // Clear existing rows
+
+                    if (data.stop_limit_orders && data.stop_limit_orders.length > 0) {
+                        data.stop_limit_orders.forEach(order => {
+                            const row = `
+                                <tr class="stop-limit-row">
+                                    <td>${order.order_type}</td>
+                                    <td>${order.stop_price}</td>
+                                    <td>${order.limit_price}</td>
+                                    <td>${order.quantity}</td>
+                                    <td>Waiting to Trigger</td>
+                                </tr>`;
+                            tableBody.innerHTML += row;
+                        });
+                    } else {
+                        // If no stop limit orders, display a message
+                        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No active stop limit orders</td></tr>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching Stop Limit Orders:', error);
+                    const tableBody = document.querySelector('#stop-limit-orders tbody');
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading stop limit orders</td></tr>';
+                });
+        }
 
         // Function to update Recent Trades table
         function updateRecentTrades() {
@@ -185,31 +298,51 @@ function updateSellOrders() {
                     const tableBody = document.querySelector('#trades tbody');
                     tableBody.innerHTML = ''; // Clear existing rows
     
-                    data.trades.forEach(trade => {
-                        const row = `
-                            <tr>
-                                <td>${trade.buyer}</td>
-                                <td>${trade.seller}</td>
-                                <td>${trade.price}</td>
-                                <td>${trade.quantity}</td>
-                                <td>${trade.timestamp}</td>
-                            </tr>`;
-                        tableBody.innerHTML += row;
-                    });
+                    if (data.trades && data.trades.length > 0) {
+                        data.trades.forEach(trade => {
+                            const row = `
+                                <tr>
+                                    <td>${trade.buyer || 'Unknown'}</td>
+                                    <td>${trade.seller || 'Unknown'}</td>
+                                    <td>${trade.price}</td>
+                                    <td>${trade.quantity}</td>
+                                    <td>${trade.timestamp}</td>
+                                </tr>`;
+                            tableBody.innerHTML += row;
+                        });
+                    } else {
+                        // If no trades, display a message
+                        tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No recent trades</td></tr>';
+                    }
                 })
-                .catch(error => console.error('Error fetching Recent Trades:', error));
+                .catch(error => {
+                    console.error('Error fetching Recent Trades:', error);
+                    const tableBody = document.querySelector('#trades tbody');
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading trades</td></tr>';
+                });
         }
     
-        //Periodic updates for all tables
+        // Periodic updates for all tables
         document.addEventListener('DOMContentLoaded', function () {
-            setInterval(updateBuyOrders, 1000);  // Update every 5 seconds
-            setInterval(updateSellOrders, 1000); // Update every 5 seconds
-            setInterval(updateRecentTrades, 1000); // Update every 5 seconds
-            setInterval(updateBestBid, 1000);  // Update every 5 seconds for Best Bid
-            setInterval(updateBestAsk, 1000);  // Update every 5 seconds for Best Ask
+            // Initial load
+            updateBestBid();
+            updateBestAsk();
+            updateBuyOrders();
+            updateSellOrders();
+            updateStopMarketOrders();
+            updateStopLimitOrders();
+            updateRecentTrades();
+            
+            // Set intervals for periodic updates
+            setInterval(updateBuyOrders, 1000);
+            setInterval(updateSellOrders, 1000);
+            setInterval(updateStopMarketOrders, 1000);
+            setInterval(updateStopLimitOrders, 1000);
+            setInterval(updateRecentTrades, 1000);
+            setInterval(updateBestBid, 1000);
+            setInterval(updateBestAsk, 1000);
         });
     </script>
-    
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>

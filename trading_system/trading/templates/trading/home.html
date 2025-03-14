@@ -9,104 +9,145 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     <script>
-        // Function to update the price field when market order is selected
-        function updatePrice() {
-    var orderType = document.querySelector('select[name="order_type"]').value;
-    var orderMode = document.querySelector('select[name="order_mode"]').value;
-    var priceField = document.querySelector('input[name="price"]');
-    var priceLabel = document.getElementById('price-label');
+        // Function to update the price field based on order type and mode
+        function updateFormFields() {
+            var orderType = document.querySelector('select[name="order_type"]').value;
+            var orderMode = document.querySelector('select[name="order_mode"]').value;
+            var priceField = document.querySelector('input[name="price"]');
+            var priceLabel = document.getElementById('price-label');
+            var stopPriceDiv = document.getElementById('stop-price-container');
+            var limitPriceDiv = document.getElementById('limit-price-container');
+            
+            // Hide all conditional fields first
+            document.getElementById('price-container').style.display = 'none';
+            stopPriceDiv.style.display = 'none';
+            limitPriceDiv.style.display = 'none';
+            
+            if (orderMode === 'MARKET') {
+                // For market orders, price is auto-fetched
+                document.getElementById('price-container').style.display = 'block';
+                priceField.disabled = true;
+                priceLabel.textContent = "Price (Auto-Fetched):";
 
-    if (orderMode === 'MARKET') {
-        priceField.disabled = true;
-        priceLabel.textContent = "Price (Auto-Fetched):";
-
-        if (orderType === 'BUY') {
-            // Fetch the best ask price
-            fetch('get_best_ask/')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch best ask price');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.best_ask && data.best_ask.price !== undefined) {
-                        priceField.value = data.best_ask.price; // Set the price
-                    } else {
-                        priceField.value = 'Unavailable';
-                    }
-                })
-                .catch(error => {
-                    console.error(error);
-                    priceField.value = 'Error fetching price';
-                });
-        } else if (orderType === 'SELL') {
-            // Fetch the best bid price
-            fetch('get_best_bid/')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch best bid price');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.best_bid && data.best_bid.price !== undefined) {
-                        priceField.value = data.best_bid.price; // Set the price
-                    } else {
-                        priceField.value = 'Unavailable';
-                    }
-                })
-                .catch(error => {
-                    console.error(error);
-                    priceField.value = 'Error fetching price';
-                });
+                if (orderType === 'BUY') {
+                    // Fetch the best ask price
+                    fetch('get_best_ask/')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to fetch best ask price');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.best_ask && data.best_ask.price !== undefined) {
+                                priceField.value = data.best_ask.price; // Set the price
+                            } else {
+                                priceField.value = 'Unavailable';
+                            }
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            priceField.value = 'Error fetching price';
+                        });
+                } else if (orderType === 'SELL') {
+                    // Fetch the best bid price
+                    fetch('get_best_bid/')
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error('Failed to fetch best bid price');
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.best_bid && data.best_bid.price !== undefined) {
+                                priceField.value = data.best_bid.price; // Set the price
+                            } else {
+                                priceField.value = 'Unavailable';
+                            }
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            priceField.value = 'Error fetching price';
+                        });
+                }
+            } else if (orderMode === 'LIMIT') {
+                // For limit orders, user enters price
+                document.getElementById('price-container').style.display = 'block';
+                priceField.disabled = false;
+                priceLabel.textContent = "Price (Enter Value):";
+                priceField.value = ''; // Clear the price field for limit orders
+            } else if (orderMode === 'STOP_MARKET') {
+                // For stop market orders, show stop price field
+                stopPriceDiv.style.display = 'block';
+            } else if (orderMode === 'STOP_LIMIT') {
+                // For stop limit orders, show both stop price and limit price fields
+                stopPriceDiv.style.display = 'block';
+                limitPriceDiv.style.display = 'block';
+            }
         }
-    } else {
-        priceField.disabled = false;
-        priceLabel.textContent = "Price (Enter Value):";
-        priceField.value = ''; // Clear the price field for limit orders
-    }
-}
 
-// Attach event listeners to update price dynamically
-document.addEventListener('DOMContentLoaded', function () {
-    var orderTypeField = document.querySelector('select[name="order_type"]');
-    var orderModeField = document.querySelector('select[name="order_mode"]');
-    orderTypeField.addEventListener('change', updatePrice);
-    orderModeField.addEventListener('change', updatePrice);
-    updatePrice(); // Initialize price on page load
-});
-
+        // Attach event listeners to update fields dynamically
+        document.addEventListener('DOMContentLoaded', function () {
+            var orderTypeField = document.querySelector('select[name="order_type"]');
+            var orderModeField = document.querySelector('select[name="order_mode"]');
+            
+            orderTypeField.addEventListener('change', updateFormFields);
+            orderModeField.addEventListener('change', updateFormFields);
+            
+            updateFormFields(); // Initialize fields on page load
+        });
     </script>
 </head>
 <body>
     <div class="container mt-5">
         <h1>Welcome {{ user.username }}</h1>
+        
+        {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
 
         <!-- Order Form -->
         <form method="post">
             {% csrf_token %}
             <div class="form-group">
                 <label for="order_type">Order Type:</label>
-                <select name="order_type" class="form-control" onchange="updatePrice()">
+                <select name="order_type" class="form-control">
                     <option value="BUY">Buy</option>
                     <option value="SELL">Sell</option>
                 </select>
             </div>
             <div class="form-group">
                 <label for="order_mode">Order Mode:</label>
-                <select name="order_mode" class="form-control" onchange="updatePrice()">
+                <select name="order_mode" class="form-control">
                     <option value="MARKET">Market</option>
                     <option value="LIMIT">Limit</option>
+                    <option value="STOP_MARKET">Stop Market</option>
+                    <option value="STOP_LIMIT">Stop Limit</option>
                 </select>
             </div>
             <div class="form-group">
                 <label for="quantity">Quantity:</label>
                 <input type="number" name="quantity" class="form-control" required>
             </div>
-            <div class="form-group">
+            
+            <!-- Regular price field (for MARKET and LIMIT orders) -->
+            <div id="price-container" class="form-group">
                 <label id="price-label" for="price">Price:</label>
                 <input type="number" step="0.01" name="price" class="form-control">
+            </div>
+            
+            <!-- Stop price field (for STOP_MARKET and STOP_LIMIT orders) -->
+            <div id="stop-price-container" class="form-group" style="display: none;">
+                <label for="stop_price">Stop Price:</label>
+                <input type="number" step="0.01" name="stop_price" class="form-control">
+                <small class="form-text text-muted">The price at which your stop order will be triggered.</small>
+            </div>
+            
+            <!-- Limit price field (for STOP_LIMIT orders) -->
+            <div id="limit-price-container" class="form-group" style="display: none;">
+                <label for="limit_price">Limit Price:</label>
+                <input type="number" step="0.01" name="limit_price" class="form-control">
+                <small class="form-text text-muted">The price at which your order will be executed after being triggered.</small>
             </div>
             
             <button type="submit" class="btn btn-primary">Submit Order</button>
@@ -122,6 +163,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <th>Order Mode</th>
                         <th>Quantity</th>
                         <th>Price</th>
+                        <th>Stop Price</th>
+                        <th>Limit Price</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -131,8 +174,20 @@ document.addEventListener('DOMContentLoaded', function () {
                             <td>{{ order.order_type }}</td>
                             <td>{{ order.order_mode }}</td>
                             <td>{{ order.quantity }}</td>
-                            <td>{{ order.price }}</td>
-                            <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
+                            <td>{{ order.price|default:"N/A" }}</td>
+                            <td>{{ order.stop_price|default:"N/A" }}</td>
+                            <td>{{ order.limit_price|default:"N/A" }}</td>
+                            <td>
+                                {% if order.is_matched %}
+                                    Matched
+                                {% elif order.order_mode in 'STOP_MARKET,STOP_LIMIT' and order.is_triggered %}
+                                    Triggered
+                                {% elif order.order_mode in 'STOP_MARKET,STOP_LIMIT' and not order.is_triggered %}
+                                    Waiting
+                                {% else %}
+                                    Unmatched
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>

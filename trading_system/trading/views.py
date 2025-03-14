@@ -5,7 +5,7 @@ from django.db import transaction
 from django.contrib.auth.decorators import login_required
 import json
 
-from .utils import match_order  # Assuming match_order is in utils.py
+from .utils import match_order, check_and_trigger_stop_loss_orders
 from django.http import JsonResponse
 
 def login(request):
@@ -14,102 +14,177 @@ def login(request):
         user, created = User.objects.get_or_create(username=username)
         return redirect('home', user_id=user.id)
     return render(request, 'trading/login.html')
+
 def fetch_best_ask():
     # Fetch the best ask price (lowest available price for a buy order)
-    return Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'quantity').first()
+    return Order.objects.filter(
+        order_type="SELL", 
+        is_matched=False,
+        order_mode__in=["LIMIT", "MARKET"]
+    ).order_by('price').values('price', 'quantity').first()
+
 def fetch_best_bid():
     # Fetch the best bid price (highest available price for a sell order)
-    return Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'quantity').first()
+    return Order.objects.filter(
+        order_type="BUY", 
+        is_matched=False,
+        order_mode__in=["LIMIT", "MARKET"]
+    ).order_by('-price').values('price', 'quantity').first()
 
 def get_best_ask(request):
     if request.method == 'GET':
-    # Fetch the best ask price (lowest available price for a buy order)
-        best_ask = Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'quantity').first()
+        # Fetch the best ask price
+        best_ask = fetch_best_ask()
         return JsonResponse({'best_ask': best_ask})
     return JsonResponse({'best_ask': None})
 
 def get_best_bid(request):
     if request.method == 'GET':
-    # Fetch the best bid price (highest available price for a sell order)
-        best_bid = Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'quantity').first()
+        # Fetch the best bid price
+        best_bid = fetch_best_bid()
         return JsonResponse({'best_bid': best_bid})
     return JsonResponse({'best_bid': None})
 
-@login_required  # Ensure the user is logged in before accessing this view
+@login_required  
 def home(request):
-    user = request.user  # Get the logged-in user
+    user = request.user  
     user, created = User.objects.get_or_create(username=user)
+
+    error_message = None
+
+    # Check for any stop loss orders that should be triggered
+    check_and_trigger_stop_loss_orders()
 
     if request.method == "POST":
         order_type = request.POST.get('order_type')
         order_mode = request.POST.get('order_mode')
         quantity = int(request.POST.get('quantity'))
-
         price = None
-        try:
-            if order_mode == "LIMIT":
-                price = float(request.POST.get('price', 0))  # Default to 0 if no price is provided
+        stop_price = None
+        limit_price = None
 
+        try:
+            # Handle different order modes
+            if order_mode == "LIMIT":
+                price = float(request.POST.get('price', 0))
+            
+            elif order_mode == "STOP_MARKET":
+                # For stop market orders, get the stop price
+                stop_price = float(request.POST.get('stop_price', 0))
+                # Price will be set when the order is triggered
+                price = None
+            
+            elif order_mode == "STOP_LIMIT":
+                # For stop limit orders, get both stop price and limit price
+                stop_price = float(request.POST.get('stop_price', 0))
+                limit_price = float(request.POST.get('limit_price', 0))
+                # Price will be set to limit_price when the order is triggered
+                price = None
+            
             elif order_mode == "MARKET":
                 if order_type == "BUY":
-                    # Fetch the JSON response from the best ask view
+                    # Fetch the best ask for market buy orders
                     best_ask_response = fetch_best_ask()
-                    best_ask_data=best_ask_response
-                    price = best_ask_data['price']
+                    if best_ask_response:
+                        price = best_ask_response['price']
+                    else:
+                        error_message = 'No sell orders available for market buy.'
+                        return render(request, 'trading/home.html', {
+                            'user': user, 
+                            'orders': Order.objects.filter(user=user),
+                            'error': error_message
+                        })
 
                 elif order_type == "SELL":
-                    # Fetch the JSON response from the best bid view
+                    # Fetch the best bid for market sell orders
                     best_bid_response = fetch_best_bid()
-                    best_bid_data=best_bid_response
-                    price = best_bid_data['price']
+                    if best_bid_response:
+                        price = best_bid_response['price']
+                    else:
+                        error_message = 'No buy orders available for market sell.'
+                        return render(request, 'trading/home.html', {
+                            'user': user, 
+                            'orders': Order.objects.filter(user=user),
+                            'error': error_message
+                        })
 
-                if price is None:
-                    return render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
-                    # Create and save the new order
+            # Create and save the new order
             new_order = Order(
                 order_type=order_type,
                 order_mode=order_mode,
                 quantity=quantity,
                 price=price,
+                stop_price=stop_price,
+                limit_price=limit_price,
                 is_matched=False,
-                user=user  # Ensure the order is associated with the logged-in user
+                is_triggered=False,
+                user=user
             )
             new_order.save()
-            match_order(new_order)
+            
+            # Only attempt to match non-stop orders immediately
+            if order_mode not in ["STOP_MARKET", "STOP_LIMIT"]:
+                match_order(new_order)
+            else:
+                # Check if the stop order should be triggered immediately
+                check_and_trigger_stop_loss_orders()
+                
         except Exception as e:
-            render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
-        
-
-
+            error_message = f'Error processing order: {str(e)}'
+            
     # Fetch orders associated with the user
-    orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
+    orders = Order.objects.filter(user=user)
 
-    return render(request, 'trading/home.html', {'user': user, 'orders': orders})
-
-
-
-
-from django.shortcuts import render
-from .models import Order
-from django.shortcuts import render
-from .models import Order, Trade
+    return render(request, 'trading/home.html', {
+        'user': user, 
+        'orders': orders,
+        'error': error_message
+    })
 
 def orderbook(request):
+    # Check for any stop loss orders that should be triggered
+    check_and_trigger_stop_loss_orders()
+    
     # Retrieve unmatched buy orders (sorted by price in descending order)
-    buy_orders = Order.objects.filter(is_matched=False, order_type='BUY').order_by('-price')
+    buy_orders = Order.objects.filter(
+        is_matched=False, 
+        order_type='BUY', 
+        order_mode__in=['LIMIT', 'MARKET']
+    ).order_by('-price')
+    
     # Retrieve unmatched sell orders (sorted by price in ascending order)
-    sell_orders = Order.objects.filter(is_matched=False, order_type='SELL').order_by('price')
+    sell_orders = Order.objects.filter(
+        is_matched=False, 
+        order_type='SELL', 
+        order_mode__in=['LIMIT', 'MARKET']
+    ).order_by('price')
+    
+    # Get stop market orders (for display purposes)
+    stop_market_orders = Order.objects.filter(
+        is_matched=False,
+        is_triggered=False,
+        order_mode='STOP_MARKET'
+    ).order_by('order_type', 'stop_price')
+    
+    # Get stop limit orders (for display purposes)
+    stop_limit_orders = Order.objects.filter(
+        is_matched=False,
+        is_triggered=False,
+        order_mode='STOP_LIMIT'
+    ).order_by('order_type', 'stop_price')
     
     # Retrieve all trades (you may filter or sort as needed)
-    trades = Trade.objects.all().order_by('-timestamp')  # Sorting trades by timestamp
+    trades = Trade.objects.all().order_by('-timestamp')
     
-    # Display both buy and sell orders in the orderbook, along with trades
+    # Display all orders in the orderbook, along with trades
     return render(request, 'trading/orderbook.html', {
         'buy_orders': buy_orders,
         'sell_orders': sell_orders,
+        'stop_market_orders': stop_market_orders,
+        'stop_limit_orders': stop_limit_orders,
         'best_bid': buy_orders.first() if buy_orders else None,
         'best_ask': sell_orders.first() if sell_orders else None,
-        'trades': trades  # Pass trades to the template
+        'trades': trades
     })
 
 def clear_database(request):
@@ -119,18 +194,43 @@ def clear_database(request):
 
 def get_buy_orders(request):
     if request.method == 'GET':
-        buy_orders = Order.objects.filter(order_type='BUY', is_matched = False).values('price','quantity', 'is_matched')
+        buy_orders = Order.objects.filter(
+            order_type='BUY', 
+            is_matched=False,
+            order_mode__in=['LIMIT', 'MARKET']
+        ).values('price', 'quantity', 'is_matched')
         return JsonResponse({'buy_orders': list(buy_orders)})
 
 def get_sell_orders(request):
     if request.method == 'GET':
-        sell_orders = Order.objects.filter(order_type='SELL', is_matched = False).values('price','quantity', 'is_matched')
+        sell_orders = Order.objects.filter(
+            order_type='SELL', 
+            is_matched=False,
+            order_mode__in=['LIMIT', 'MARKET']
+        ).values('price', 'quantity', 'is_matched')
         return JsonResponse({'sell_orders': list(sell_orders)})
+
+def get_stop_market_orders(request):
+    if request.method == 'GET':
+        stop_market_orders = Order.objects.filter(
+            order_mode='STOP_MARKET', 
+            is_matched=False,
+            is_triggered=False
+        ).values('order_type', 'stop_price', 'quantity')
+        return JsonResponse({'stop_market_orders': list(stop_market_orders)})
+
+def get_stop_limit_orders(request):
+    if request.method == 'GET':
+        stop_limit_orders = Order.objects.filter(
+            order_mode='STOP_LIMIT', 
+            is_matched=False,
+            is_triggered=False
+        ).values('order_type', 'stop_price', 'limit_price', 'quantity')
+        return JsonResponse({'stop_limit_orders': list(stop_limit_orders)})
 
 def get_recent_trades(request):
     if request.method == 'GET':
         recent_trades = Trade.objects.all().order_by('-timestamp')[:10].values(
-            'buyer','seller', 'price', 'quantity', 'timestamp'
-        )  # Adjust fields and ordering as needed
+            'buyer', 'seller', 'price', 'quantity', 'timestamp'
+        )
         return JsonResponse({'trades': list(recent_trades)})
-
