@@ -100,7 +100,9 @@ def home(request):
                     # Proceed with saving the order or further logic
                     messages.success(request, "Order placed successfully!")
                     new_order.save()
-                    match_order(new_order)
+                    print("call1")
+                    if(not is_ioc):
+                        match_order(new_order)
                     messages.success(request, 'Your order has been placed successfully!')
                     return redirect('/home')
 
@@ -128,18 +130,6 @@ def home(request):
                     return redirect('/home')
 
 
-            # new_order = Order(
-            #     order_type=order_type,
-            #     order_mode=order_mode,
-            #     quantity=quantity,
-            #     price=price,
-            #     is_matched=False,
-            #     is_ioc=is_ioc,
-            #     user=user  # Ensure the order is associated with the logged-in user
-            # )
-            # new_order.save()
-            # match_order(new_order)
-            # messages.success(request, 'Your order has been placed successfully!')
         except Exception as e:
             render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
         
