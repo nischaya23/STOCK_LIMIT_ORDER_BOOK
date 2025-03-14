@@ -89,6 +89,7 @@ def home(request):
                     disclosed=disclosed,
                     price=price,
                     is_matched=False,
+                    is_ioc=is_ioc,
                     user=user  # Ensure the order is associated with the logged-in user
                 )
 
@@ -112,6 +113,7 @@ def home(request):
                     target_price=target_price,
                     price=price,
                     is_matched=False,
+                    is_ioc=is_ioc,
                     user=user
                 )
 
@@ -258,12 +260,12 @@ def clear_database(request):
 
 def get_buy_orders(request):
     if request.method == 'GET':
-        buy_orders = Order.objects.filter(order_type='BUY', is_matched = False).values('price','disclosed', 'is_matched', 'id')
+        buy_orders = Order.objects.filter(order_type='BUY', is_matched = False).values('price','disclosed', 'is_matched', 'id','is_ioc')
         return JsonResponse({'buy_orders': list(buy_orders)})
 
 def get_sell_orders(request):
     if request.method == 'GET':
-        sell_orders = Order.objects.filter(order_type='SELL', is_matched = False).values('price','disclosed', 'is_matched')
+        sell_orders = Order.objects.filter(order_type='SELL', is_matched = False).values('price','disclosed', 'is_matched','is_ioc')
         return JsonResponse({'sell_orders': list(sell_orders)})
 
 def get_recent_trades(request):

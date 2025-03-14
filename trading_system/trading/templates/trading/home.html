@@ -217,11 +217,9 @@
       var orderMode = document.querySelector('select[name="order_mode"]').value;
       var priceField = document.querySelector('input[name="price"]');
       var priceLabel = document.getElementById('price-label');
-
       if (orderMode === 'MARKET') {
         priceField.disabled = true;
         priceLabel.textContent = "Price (Auto-Fetched):";
-
         if (orderType === 'BUY') {
           fetch('/orderbook/get_best_ask/')
             .then(response => {
@@ -270,34 +268,10 @@
         priceField.value = '';
       }
     }
-
-    document.addEventListener('DOMContentLoaded', function() {
-      var orderTypeField = document.querySelector('select[name="order_type"]');
-      var orderModeField = document.querySelector('select[name="order_mode"]');
-      orderTypeField.addEventListener('change', updatePrice);
-      orderModeField.addEventListener('change', updatePrice);
-      updatePrice();
-    });
-
-    window.onload = function() {
-      setTimeout(function() {
-        const flashMessages = document.querySelectorAll('#flash-messages .flash-message');
-        flashMessages.forEach(function(msg) {
-          msg.style.transition = "opacity 1s ease-out";
-          msg.style.opacity = 0;
-          setTimeout(function() {
-            msg.style.display = 'none';
-          }, 5000);
-        });
-      }, 5000);
-    };
-
-    // Simplified toggleFields function (removing duration fields not in markup)
     function toggleFields() {
       const stoplossOrder = document.getElementById("Stoploss_order").value;
       const targetPrice = document.getElementById("Target_price");
       const targetPriceGroup = document.getElementById("target_price_group");
-      // targetPrice.disabled = true;xx 
       if (stoplossOrder === "YES") {
         targetPriceGroup.style.display = "block";
         targetPrice.disabled = false;
@@ -307,6 +281,119 @@
         targetPrice.disabled = true;
       }
     }
+
+    function handleIOCChange(){
+      const isIOCSelect=document.querySelector('select[name="is_ioc"]');
+      const isIOC=isIOCSelect.value;
+      const orderModeSelect=document.querySelector('select[name="order_mode"]');
+      const stoplossOrderSelect=document.getElementById("Stoploss_order");
+      const priceField=document.querySelector('input[name="price"]');
+      const priceLabel=document.getElementById('price-label');
+    
+      if (isIOC==="True") {
+        // Set values for orderMode and stoplossOrder
+        orderModeSelect.value="LIMIT";
+        stoplossOrderSelect.value="NO";
+        
+        // Instead of disabling, we'll use hidden fields to ensure values are submitted
+        if (!document.getElementById('hidden_order_mode')) {
+          const hiddenOrderMode=document.createElement('input');
+          hiddenOrderMode.type = 'hidden';
+          hiddenOrderMode.name = 'order_mode';
+          hiddenOrderMode.id = 'hidden_order_mode';
+          hiddenOrderMode.value = 'LIMIT';
+          orderModeSelect.insertAdjacentElement('afterend', hiddenOrderMode);
+        } else {
+          document.getElementById('hidden_order_mode').value = 'LIMIT';
+        }
+        
+        if (!document.getElementById('hidden_stoploss')) {
+          const hiddenStoploss = document.createElement('input');
+          hiddenStoploss.type = 'hidden';
+          hiddenStoploss.name = 'Stoploss_order';
+          hiddenStoploss.id = 'hidden_stoploss';
+          hiddenStoploss.value = 'NO';
+          stoplossOrderSelect.insertAdjacentElement('afterend', hiddenStoploss);
+        } else {
+          document.getElementById('hidden_stoploss').value = 'NO';
+        }
+        
+        // Visually disable but don't actually disable
+        orderModeSelect.style.opacity = '0.6';
+        orderModeSelect.style.pointerEvents = 'none';
+        stoplossOrderSelect.style.opacity = '0.6';
+        stoplossOrderSelect.style.pointerEvents = 'none';
+        
+        // Call toggleFields to handle target price visibility
+        toggleFields();
+        
+        // Ensure price field is set properly
+        priceField.disabled = false;
+        priceField.placeholder = 'Enter Value';
+        priceLabel.textContent = "Price (Enter Value):";
+        priceField.value = '';
+      } else {
+        // Remove hidden fields if they exist
+        const hiddenOrderMode = document.getElementById('hidden_order_mode');
+        const hiddenStoploss = document.getElementById('hidden_stoploss');
+        if (hiddenOrderMode) hiddenOrderMode.remove();
+        if (hiddenStoploss) hiddenStoploss.remove();
+        
+        // Restore visual appearance
+        orderModeSelect.style.opacity = '1';
+        orderModeSelect.style.pointerEvents = 'auto';
+        stoplossOrderSelect.style.opacity = '1';
+        stoplossOrderSelect.style.pointerEvents = 'auto';
+        
+        updatePrice();
+      }
+    }
+    
+    // Additional function to handle form submission
+    function prepareFormSubmission() {
+      const form = document.querySelector('form');
+      const originalSubmit = form.onsubmit;
+      
+      form.onsubmit = function(e) {
+        // If IOC is True, ensure the correct values are set
+        const isIOC = document.querySelector('select[name="is_ioc"]').value;
+        if (isIOC === "True") {
+          const orderModeSelect = document.querySelector('select[name="order_mode"]');
+          const stoplossOrderSelect = document.getElementById("Stoploss_order");
+          
+          // Update the actual selects right before submission
+          orderModeSelect.value = "LIMIT";
+          stoplossOrderSelect.value = "NO";
+          
+          // Make sure they're not disabled so they submit
+          orderModeSelect.disabled = false;
+          stoplossOrderSelect.disabled = false;
+        }
+        
+        // Call original onsubmit if it exists
+        if (originalSubmit) return originalSubmit.call(this, e);
+      };
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      var orderTypeField = document.querySelector('select[name="order_type"]');
+      var orderModeField = document.querySelector('select[name="order_mode"]');
+      var isIOCField = document.querySelector('select[name="is_ioc"]');
+      var stoplossOrderField = document.getElementById("Stoploss_order");
+      
+      orderTypeField.addEventListener('change', updatePrice);
+      orderModeField.addEventListener('change', updatePrice);
+      isIOCField.addEventListener('change', handleIOCChange);
+      stoplossOrderField.addEventListener('change', toggleFields);
+      
+      // Prepare form submission to ensure correct values
+      prepareFormSubmission();
+      
+      // Initialize UI state
+      handleIOCChange();
+      updatePrice();
+      toggleFields();
+    });
   </script>
 </head>
 <body>
@@ -347,6 +434,13 @@
         </select>
       </div>
       <div class="input-group">
+        <label for="is_ioc">Immediate or Cancellation Order</label>
+        <select name="is_ioc" class="form-control" onchange="handleIOCChange()">
+          <option value="False">No</option>
+          <option value="True">Yes</option>
+        </select>
+      </div>
+      <div class="input-group">
         <label for="order_mode">Order Mode</label>
         <select name="order_mode" class="form-control">
           <option value="MARKET">Market</option>
@@ -372,13 +466,13 @@
         <label for="disclosed_quantity">Disclosed Quantity</label>
         <input type="number" name="disclosed_quantity" class="form-control" required>
       </div>
-      <div class="input-group">
+      {% comment %} <div class="input-group">
         <label for="is_ioc">Immediate or Cancellation Order</label>
         <select name="is_ioc" class="form-control">
           <option value="False">No</option>
           <option value="True">Yes</option>
         </select>
-      </div>
+      </div> {% endcomment %}
       <div class="input-group">
         <label id="price-label" for="price">Price</label>
         <input type="number" step="0.01" name="price" class="form-control">
@@ -412,15 +506,27 @@
           </thead>
           <tbody>
             {% for order in orders %}
-            <tr>
-              <td>{{ order.order_type }}</td>
-              <td>{{ order.order_mode }}</td>
-              <td>{{ order.quantity }}</td>
-              <td>{{ order.disclosed }}</td>
-              <td>{{ order.price }}</td>
-              <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
-              <td>{{ order.id }}</td>
-            </tr>
+              {% if not order.is_ioc %}
+                <tr>
+                  <td>{{ order.order_type }}</td>
+                  <td>{{ order.order_mode }}</td>
+                  <td>{{ order.quantity }}</td>
+                  <td>{{ order.disclosed }}</td>
+                  <td>{{ order.price }}</td>
+                  <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
+                  <td>{{ order.id }}</td>
+                </tr>
+              {% elif order.is_ioc and order.is_matched %}
+                <tr>
+                  <td>{{ order.order_type }}</td>
+                  <td>{{ order.order_mode }}</td>
+                  <td>{{ order.quantity }}</td>
+                  <td>{{ order.disclosed }}</td>
+                  <td>{{ order.price }}</td>
+                  <td>Matched</td>
+                  <td>{{ order.id }}</td>
+                </tr>
+              {% endif %}
             {% endfor %}
           </tbody>
         </table>

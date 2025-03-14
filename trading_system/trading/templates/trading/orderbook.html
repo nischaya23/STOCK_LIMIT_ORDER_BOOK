@@ -245,12 +245,14 @@
           tableBody.innerHTML = '';
 
           const groupedOrders = {};
-          data.buy_orders.forEach(order => {
-            if (!groupedOrders[order.price]) {
-              groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched };
-            }
-            groupedOrders[order.price].disclosed += order.disclosed;
-          });
+          data.buy_orders
+              .filter(order => !order.is_ioc)  
+              .forEach(order => {
+                if (!groupedOrders[order.price]) {
+                  groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched };
+                }
+                groupedOrders[order.price].disclosed += order.disclosed;
+              });
 
           const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
             return parseFloat(b[0]) - parseFloat(a[0]); // Higher price first
@@ -276,15 +278,17 @@
           tableBody.innerHTML = '';
 
           const groupedOrders = {};
-          data.sell_orders.forEach(order => {
-            const disclosed = parseFloat(order.disclosed);
-            const price = parseFloat(order.price);
-            if (isNaN(disclosed) || isNaN(price)) return;
-            if (!groupedOrders[price]) {
-              groupedOrders[price] = { disclosed: 0, is_matched: order.is_matched };
-            }
-            groupedOrders[price].disclosed += disclosed;
-          });
+          data.sell_orders
+              .filter(order => !order.is_ioc)  
+              .forEach(order => {
+                const disclosed = parseFloat(order.disclosed);
+                const price = parseFloat(order.price);
+                if (isNaN(disclosed) || isNaN(price)) return;
+                if (!groupedOrders[price]) {
+                  groupedOrders[price] = { disclosed: 0, is_matched: order.is_matched };
+                }
+                groupedOrders[price].disclosed += disclosed;
+              });
 
           const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
             return parseFloat(a[0]) - parseFloat(b[0]); // Lower price first
