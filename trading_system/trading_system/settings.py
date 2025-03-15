@@ -72,6 +72,7 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = "trading_system.wsgi.application"
+# AUTH_USER_MODEL = 'trading.User'  # Replace with your actual app name
 
 
 # Database

@@ -265,3 +265,35 @@ def get_recent_trades(request):
         )  # Adjust fields and ordering as needed
         return JsonResponse({'trades': list(recent_trades)})
 
+import logging
+logger = logging.getLogger(__name__)
+@login_required
+def cancel_order(request):
+    if request.method == 'POST':
+        try:
+            logger.debug(f"Cancellation request received: {request.body}")
+            # Get current user using the same pattern as order placement
+            user = User.objects.get(username=request.user.username)
+            
+            data = json.loads(request.body)
+            order_id = data.get('order_id')
+            
+            with transaction.atomic():
+                order = Order.objects.get(
+                    id=order_id,
+                    user=user,
+                    is_matched=False
+                )
+                order.delete()
+            
+            return JsonResponse({'success': True, 'message': 'Order cancelled successfully'})
+        
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'User authentication failed'}, status=401)
+        except Order.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Order not found or already matched'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid request format'}, status=400)
+        except Exception as e:
+            logger.error(f"Cancel order error: {str(e)}")
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
