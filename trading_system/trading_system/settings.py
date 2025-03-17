@@ -72,17 +72,35 @@ TEMPLATES = [
 
 
 WSGI_APPLICATION = "trading_system.wsgi.application"
+# AUTH_USER_MODEL = 'trading.User'  # Replace with your actual app name
 
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
+'default': {
+
+        # 'ENGINE': 'django.db.backends.sqlite3',
+
+        'ENGINE': 'django.db.backends.postgresql',
+
+        'NAME': 'mydb',
+
+        'USER': 'myuser',
+
+        'PASSWORD': 'fac_chappa',
+
+        'HOST': '13.235.13.91',
+
+        'PORT': '5432',
+       
+    # }
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.sqlite3',
+    #     "NAME": BASE_DIR / "db.sqlite3",
+
+}}
 
 
 # Password validation
@@ -115,3 +133,15 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_REDIRECT_URL = 'home'
+
+"""
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.example.com'  # Replace with your SMTP server
+EMAIL_PORT = 587  # Common port for TLS
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your_email@example.com'  # Replace with your email
+EMAIL_HOST_PASSWORD = 'your_password'  # Replace with your password or app password
+DEFAULT_FROM_EMAIL = 'Your Company <noreply@example.com>'"
+"""
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

@@ -1,77 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@200;300;400;500;600;700&display=swap");
-
+    /* Reset & Variables */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: "Open Sans", sans-serif;
+    }
+    :root {
+      --bg-color: #0f0f0f;
+      --card-bg: rgba(30, 30, 30, 0.8);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --neon: #0ff;
+      --accent: #ff0;
+      --text-color: #e0e0e0;
+      --input-bg: rgba(0, 0, 0, 0.2);
     }
 
+    /* Background & Body */
     body {
+      background: linear-gradient(45deg, #000, #1a1a1a, #000);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      width: 100%;
-      padding: 0 10px;
-      background: #000;
+      font-family: 'Orbitron', sans-serif;
+      color: var(--text-color);
+      position: relative;
+      padding: 20px;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
-    body::before {
-      content: "";
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      background: url("https://www.codingnepalweb.com/demos/create-glassmorphism-login-form-html-css/hero-bg.jpg"), #000;
-      background-position: center;
-      background-size: cover;
-    }
-
+    /* Wrapper Card (Glassmorphism) */
     .wrapper {
-      width: 400px;
-      border-radius: 8px;
-      padding: 30px;
+      width: 100%;
+      max-width: 400px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 40px;
       text-align: center;
-      border: 1px solid rgba(255, 255, 255, 0.5);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--card-border);
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    form {
-      display: flex;
-      flex-direction: column;
-    }
-
+    /* Headings */
     h2 {
-      font-size: 2rem;
+      font-size: 2.2rem;
+      color: var(--neon);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .sub-heading {
+      font-size: 1rem;
+      color: var(--text-color);
       margin-bottom: 20px;
-      color: #fff;
+      letter-spacing: 1px;
     }
 
+    /* Input Fields */
     .input-field {
       position: relative;
-      border-bottom: 2px solid #ccc;
-      margin: 15px 0;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+      margin: 20px 0;
+      transition: all 0.3s ease;
     }
-
     .input-field label {
       position: absolute;
       top: 50%;
       left: 0;
       transform: translateY(-50%);
-      color: #fff;
+      color: rgba(255, 255, 255, 0.7);
       font-size: 16px;
       pointer-events: none;
-      transition: 0.15s ease;
+      transition: 0.3s ease;
     }
-
     .input-field input {
       width: 100%;
       height: 40px;
@@ -79,67 +100,87 @@
       border: none;
       outline: none;
       font-size: 16px;
-      color: #fff;
+      color: var(--text-color);
+    }
+    .input-field input:focus ~ label,
+    .input-field input:valid ~ label {
+      font-size: 0.9rem;
+      top: -5px;
+      color: var(--neon);
+    }
+    .input-field input:focus {
+      border-bottom-color: var(--neon);
     }
 
-    .input-field input:focus~label,
-    .input-field input:valid~label {
-      font-size: 0.8rem;
-      top: 10px;
-      transform: translateY(-120%);
-    }
-
+    /* Button */
     button {
-      background: #fff;
-      color: #000;
-      font-weight: 600;
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(45deg, var(--neon), var(--accent));
       border: none;
-      padding: 12px 20px;
-      cursor: pointer;
-      border-radius: 3px;
+      border-radius: 6px;
+      color: var(--bg-color);
+      font-weight: bold;
       font-size: 16px;
-      border: 2px solid transparent;
-      transition: 0.3s ease;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-top: 20px;
     }
-
     button:hover {
-      color: #fff;
-      border-color: #fff;
-      background: rgba(255, 255, 255, 0.15);
+      background: linear-gradient(45deg, var(--accent), var(--neon));
+      box-shadow: 0 4px 10px rgba(0, 255, 255, 0.7);
     }
 
-    .login {
-      text-align: center;
-      margin-top: 30px;
-      color: #fff;
+    /* Register Link */
+    .register {
+      margin-top: 20px;
+      color: var(--text-color);
     }
-
-    .wrapper a {
-      color: #efefef;
+    .register a {
+      color: var(--neon);
       text-decoration: none;
+      font-weight: bold;
+    }
+    .register a:hover {
+      text-decoration: underline;
     }
 
-    .wrapper a:hover {
-      text-decoration: underline;
+    /* Flash Messages */
+    #flash-messages .alert {
+      background-color: #ffeb3b;
+      color: #333;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 4px;
     }
   </style>
 </head>
 <body>
   <div class="wrapper">
+    {% if messages %}
+      <div id="flash-messages">
+        <div class="alert alert-danger" role="alert">
+          {% for message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
     <form method="post" action="{% url 'login' %}">
       {% csrf_token %}
-      <h2>Login</h2>
+      <h2>Welcome Back!</h2>
+      <p class="sub-heading">Login to access your account</p>
       <div class="input-field">
         <input type="text" name="username" id="username" required>
-        <label for="username">Enter your Username</label>
+        <label for="username">Username</label>
       </div>
       <div class="input-field">
         <input type="password" name="password" id="password" required>
-        <label for="password">Enter your Password</label>
+        <label for="password">Password</label>
       </div>
       <button type="submit">Login</button>
       <div class="register">
-        <p style="color: #fff;">Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+        <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
       </div>
     </form>
   </div>

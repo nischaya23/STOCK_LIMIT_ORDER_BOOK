@@ -153,8 +153,17 @@
             <button type="submit" class="btn btn-primary">Submit Order</button>
         </form>
 
-        <!-- Orders Table -->
-        <h2 class="mt-5">Your Orders</h2>
+    <div class="card">
+      <!-- {% if messages %}
+      <div class="flash-message alert-danger">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+      {% endif %} -->
+
+      <h2 class="change positive">Recent Orders</h2>
+      <div class="table-container">
         {% if orders %}
             <table class="table table-bordered table-striped">
                 <thead>
@@ -193,13 +202,12 @@
                 </tbody>
             </table>
         {% else %}
-            <p>You have no orders yet.</p>
-        {% endif %}
-
-        <!-- Link to Order Book Page -->
-        <div class="mt-4">
-            <a href="{% url 'orderbook' %}" class="btn btn-secondary" target="_blank">Go to Order Book</a>
+        <div class="flash-message alert-warning">
+          <p>No orders found. Place your first order above.</p>
         </div>
+        {% endif %}
+      </div>
     </div>
+  </div>
 </body>
 </html>

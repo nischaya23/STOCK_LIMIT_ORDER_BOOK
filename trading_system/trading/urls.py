@@ -7,6 +7,7 @@ urlpatterns = [
     path('logout/', auth_views.LogoutView.as_view(), name='logout'),
     path('home/', views.home, name='home'),
     path('orderbook/', views.orderbook, name='orderbook'),
+    path('modify/', views.modify, name='modify'),
     path('clear/', views.clear_database, name='clear_database'),
     path('orderbook/get_best_ask/', views.get_best_ask, name='get_best_ask'),
     path('orderbook/get_best_bid/', views.get_best_bid, name='get_best_bid'),

@@ -23,7 +23,9 @@ from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    
     path('', include('trading.urls')),
     path('register/', user_views.register, name='register'),
+    path('bulk_user_upload/', user_views.bulk_user_upload, name='bulk_user_upload'),
+    path('bulk-delete/', user_views.bulk_user_delete, name='bulk_user_delete'),
+    path('password-reset/',user_views.change_password,name='password_reset'),
 ]

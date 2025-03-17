@@ -1,9 +1,10 @@
 from django.shortcuts import render, redirect
-from .models import User, Order, Trade
+from .models import User, Order, Trade, Stoploss_Order
 from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 import json
+from django.contrib import messages
 
 from .utils import match_order, check_and_trigger_stop_loss_orders
 from django.http import JsonResponse
