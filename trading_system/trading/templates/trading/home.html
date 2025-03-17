@@ -208,6 +208,72 @@
     @media screen and (max-width: 768px) {
       .grid-links { flex-direction: column; align-items: center; }
     }
+    .btn-danger {
+      background: linear-gradient(45deg, #ff4444, #cc0000) !important;
+      border: 1px solid #ff4444 !important;
+    }
+    
+    .btn-danger:hover {
+      box-shadow: 0 0 15px rgba(255, 68, 68, 0.7) !important;
+    }
+    
+    .alert-success {
+      border-left: 4px solid #00C851;
+      background: rgba(0, 200, 81, 0.1);
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+  }
+  
+  @keyframes slideOut {
+      from { transform: translateX(0); }
+      to { transform: translateX(100%); }
+  }
+  
+  .flash-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      z-index: 1000;
+  }
+  
+  .close-btn {
+      cursor: pointer;
+      font-size: 1.2em;
+      margin-left: 10px;
+  }
+  /* Add to existing styles */
+tr {
+    transition: all 0.3s ease !important;
+}
+
+@keyframes cancelFlash {
+    0% { background-color: transparent; }
+    50% { background-color: #ff444433; }
+    100% { background-color: transparent; }
+}
+
+.cancel-highlight {
+    animation: cancelFlash 1s ease;
+}
+/* Add to existing table row styles */
+.table tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transform-origin: left center;
+}
+
+@keyframes cancelPulse {
+    0% { transform: translateX(0); }
+    50% { transform: translateX(30px); }
+    100% { transform: translateX(-100%); }
+}
   </style>
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>
@@ -394,6 +460,95 @@
       updatePrice();
       toggleFields();
     });
+    function cancelOrder(orderId) {
+      if (!confirm('Confirm cancellation?')) return;
+      
+      const row = document.getElementById(`order-${orderId}`);
+      if (!row) {
+          showFlashMessage('Order not found in list', 'error');
+          return;
+      }
+  
+      // Immediate visual feedback
+      row.style.transition = 'all 0.1s ease';
+      row.style.opacity = '0.5';
+      row.style.transform = 'translateX(30px)';
+  
+      fetch("{% url 'cancel_order' %}", {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+          },
+          body: JSON.stringify({ order_id: orderId })
+      })
+      .then(response => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+      })
+      .then(data => {
+          if (data.success) {
+              // Complete the removal animation
+              row.style.opacity = '0';
+              row.style.transform = 'translateX(-100%)';
+              setTimeout(() => row.remove(), 100);
+              
+              // Update counter if exists
+              const counter = document.getElementById('order-count');
+              if (counter) counter.textContent = parseInt(counter.textContent) - 1;
+          }
+      })
+      .catch(error => {
+          console.error('Cancel failed:', error);
+          // Reset visual state
+          row.style.opacity = '1';
+          row.style.transform = 'none';
+          showFlashMessage(error.message || 'Cancellation failed', 'error');
+      });
+  }
+  
+  // CSRF cookie helper function (add this)
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.startsWith(name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  } 
+
+  {% comment %} function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+}
+   {% endcomment %}
+  // Enhanced flash message display
+  function showFlashMessage(message, type) {
+      const container = document.getElementById('flash-messages') || document.body;
+      const flash = document.createElement('div');
+      
+      flash.className = `flash-message ${type === 'error' ? 'alert-danger' : 'alert-success'}`;
+      flash.innerHTML = `
+          <span class="message-text">${message}</span>
+          <span class="close-btn" onclick="this.parentElement.remove()">&times;</span>
+      `;
+  
+      // Add animation styles
+      flash.style.animation = 'slideIn 0.3s ease-out';
+      container.prepend(flash);
+  
+      // Auto-remove after 5 seconds
+      setTimeout(() => {
+          flash.style.animation = 'slideOut 0.3s ease-in';
+          setTimeout(() => flash.remove(), 300);
+      }, 5000);
+  }
+
   </script>
 </head>
 <body>
@@ -502,11 +657,12 @@
               <th>Price</th>
               <th>Status</th>
               <th>ID</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {% for order in orders %}
-              <tr>
+              <tr id="order-{{ order.id }}" data-order-id="{{ order.id }}">
                 <td>{{ order.order_type }}</td>
                 <td>{{ order.order_mode }}</td>
                 <td>{{ order.quantity }}</td>
@@ -514,6 +670,16 @@
                 <td>{{ order.price }}</td>
                 <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
                 <td>{{ order.id }}</td>
+                <td>
+                  {% if not order.is_matched %}
+                    <button onclick="cancelOrder({{ order.id }})" 
+                            class="btn btn-danger" 
+                            style="padding: 8px 15px; font-size: 14px;">
+                      Cancel
+                    </button>
+                  {% endif %}
+                </td>
+
               </tr>
             {% endfor %}
           </tbody>
