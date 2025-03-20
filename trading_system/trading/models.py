@@ -33,12 +33,18 @@ class Order(models.Model):
 
     is_ioc = models.BooleanField(default=False)
 
+    def __str__(self):
+        return f"{self.order_type} {self.order_mode} Order #{self.id} by {self.user}"
+
 class Trade(models.Model):
     buyer = models.ForeignKey(User, related_name='buy_trades', on_delete=models.CASCADE)
     seller = models.ForeignKey(User, related_name='sell_trades', on_delete=models.CASCADE)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Trade #{self.id}: {self.buyer} ⇄ {self.seller} ({self.quantity} @ {self.price})"
 
 
 class Stoploss_Order(models.Model):
@@ -62,3 +68,6 @@ class Stoploss_Order(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
     is_matched = models.BooleanField(default=False)
     is_ioc = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"StopLoss {self.order_type} Order #{self.id} (Target: {self.target_price})"
