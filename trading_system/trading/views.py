@@ -49,6 +49,7 @@ def home(request):
         stoploss_order =  request.POST.get('Stoploss_order')
         target_price = request.POST.get('Target_price')
         is_ioc=request.POST.get('is_ioc')=='True'
+        original_quantity=quantity
 
         price = None
         end_time=request.POST.get('end_time')
@@ -90,7 +91,9 @@ def home(request):
                     price=price,
                     is_matched=False,
                     is_ioc=is_ioc,
-                    user=user  # Ensure the order is associated with the logged-in user
+                    user=user,  # Ensure the order is associated with the logged-in user
+                    original_quantity=original_quantity
+
                 )
 
                 if disclosed < 0.1 * quantity:  # disclosed_quantity should not be > 10% of quantity
@@ -116,7 +119,7 @@ def home(request):
                     price=price,
                     is_matched=False,
                     is_ioc=is_ioc,
-                    user=user
+                    user=user,
                 )
 
                 if disclosed < 0.1 * quantity:  # disclosed_quantity should not be > 10% of quantity
@@ -137,8 +140,10 @@ def home(request):
 
     # Fetch orders associated with the user
     orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
+    trades = Trade.objects.filter(Q(buyer=user) | Q(seller=user))
 
-    return render(request, 'trading/home.html', {'user': user, 'orders': orders})
+
+    return render(request, 'trading/home.html', {'user': user, 'orders': orders,'trades': trades})
 
 
 

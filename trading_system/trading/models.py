@@ -29,6 +29,9 @@ class Order(models.Model):
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_matched = models.BooleanField(default=False)
+    # original_quantity = models.IntegerField()
+    original_quantity = models.IntegerField(default=0)  # New field added
+
  
 
     is_ioc = models.BooleanField(default=False)

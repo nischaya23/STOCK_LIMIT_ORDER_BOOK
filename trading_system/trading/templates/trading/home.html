@@ -636,15 +636,7 @@ tr {
     </form>
 
     <div class="card">
-      <!-- {% if messages %}
-      <div class="flash-message alert-danger">
-        {% for message in messages %}
-        <p>{{ message }}</p>
-        {% endfor %}
-      </div>
-      {% endif %} -->
-
-      <h2 class="change positive">Recent Orders</h2>
+      <h2 class="change positive">Active Orders</h2>
       <div class="table-container">
         {% if orders %}
         <table class="table">
@@ -654,43 +646,85 @@ tr {
               <th>Order Mode</th>
               <th>Quantity</th>
               <th>Disclosed</th>
+              <th>Original Quantity</th>
               <th>Price</th>
-              <th>Status</th>
+              <!-- <th>Status</th> -->
               <th>ID</th>
               <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {% for order in orders %}
-              <tr id="order-{{ order.id }}" data-order-id="{{ order.id }}">
-                <td>{{ order.order_type }}</td>
-                <td>{{ order.order_mode }}</td>
-                <td>{{ order.quantity }}</td>
-                <td>{{ order.disclosed }}</td>
-                <td>{{ order.price }}</td>
-                <td>{% if order.is_matched %}Matched{% else %}Unmatched{% endif %}</td>
-                <td>{{ order.id }}</td>
-                <td>
-                  {% if not order.is_matched %}
+              {% if not order.is_matched %}
+                <tr id="order-{{ order.id }}" data-order-id="{{ order.id }}">
+                  <td>{{ order.order_type }}</td>
+                  <td>{{ order.order_mode }}</td>
+                  <td>{{ order.quantity }}</td>
+                  <td>{{ order.disclosed }}</td>
+                  <td>{{ order.original_quantity }}</td>                  
+                  <td>{{ order.price }}</td>
+                  <!-- <td>Unmatched</td> -->
+                  <td>{{ order.id }}</td>
+                  <td>
                     <button onclick="cancelOrder({{ order.id }})" 
                             class="btn btn-danger" 
                             style="padding: 8px 15px; font-size: 14px;">
                       Cancel
                     </button>
-                  {% endif %}
-                </td>
-
+                  </td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="flash-message alert-warning">
+          <p>No active orders found.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2 class="change positive">Completed Trades</h2>
+      <div class="table-container">
+        {% if trades %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Trade ID</th>
+              <th>Buyer</th>
+              <th>Seller</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for trade in trades %}
+              <tr>
+                <td>{{ trade.id }}</td>
+                <td>{{ trade.buyer.username }}</td>
+                <td>{{ trade.seller.username }}</td>
+                <td>{{ trade.quantity }}</td>
+                <td>{{ trade.price }}</td>
+                <td>{{ trade.timestamp }}</td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
         {% else %}
         <div class="flash-message alert-warning">
-          <p>No orders found. Place your first order above.</p>
+          <p>No completed trades found.</p>
         </div>
         {% endif %}
       </div>
     </div>
+    
+    
+    
+    
+
   </div>
 </body>
 </html>
