@@ -278,6 +278,93 @@ tr {
   <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.5/dist/umd/popper.min.js"></script>
   <script>
+
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('quantity');
+    const disclosedInput = document.getElementById('disclosed_quantity');
+
+    if (!quantityInput || !disclosedInput) {
+      console.error('One or both of the fields were not found.');
+      return;
+    }
+    
+    // Debug: log once after DOM content loaded
+    console.log('Quantity and Disclosed Quantity elements found');
+
+    quantityInput.addEventListener('input', function(e) {
+      console.log('Quantity changed: ' + e.target.value); // Debug log
+      disclosedInput.value = e.target.value;
+    });
+  });
+
+  document.addEventListener('DOMContentLoaded', function() {
+  // Get your input elements and form element (make sure the IDs match those in your HTML)
+  const quantityInput = document.getElementById('quantity');
+  const disclosedInput = document.getElementById('disclosed_quantity');
+  const form = document.getElementById('myForm'); // Ensure your form has id="myForm"
+
+  // Function to validate the disclosed quantity (must be at least 10% of quantity)
+  function validateDisclosed() {
+    // Ensure we have a valid number; default to 0
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const disclosed = parseFloat(disclosedInput.value) || 0;
+    const minAllowed = quantity * 0.10;
+
+    if (disclosed < minAllowed) {
+      disclosedInput.setCustomValidity(
+        `Disclosed quantity must be at least 10% of quantity (minimum allowed: ${minAllowed}).`
+      );
+    } else {
+      disclosedInput.setCustomValidity('');
+    }
+  }
+
+  // When quantity changes, update disclosed and validate it.
+  quantityInput.addEventListener('input', function() {
+    disclosedInput.value = this.value;
+    validateDisclosed();
+  });
+
+  // Also validate whenever the user manually changes the disclosed quantity.
+  disclosedInput.addEventListener('input', function() {
+    validateDisclosed();
+  });
+
+  // On form submission, perform the validation check.
+  form.addEventListener('submit', function(event) {
+    validateDisclosed(); // make sure to update validity message
+
+    // If the form is invalid, prevent submission and display validation messages.
+    if (!form.checkValidity()) {
+      event.preventDefault();      // Stop form from submitting
+      form.reportValidity();         // Display the default browser error messages
+    }
+  });
+});
+
+
+
+function checkOrderMode() {
+    const orderMode = document.getElementById("order_mode").value;
+    const isIOC = document.getElementById("is_ioc");
+    const stoplossOrder = document.getElementById("Stoploss_order");
+
+    if (orderMode === "LIMIT") {
+      isIOC.disabled = false;
+      stoplossOrder.disabled = false;
+    } else {
+      isIOC.value = "False"; // Force "No"
+      isIOC.disabled = true;
+
+      stoplossOrder.value = "NO"; // Force "No"
+      stoplossOrder.disabled = true;
+    }
+    handleIOCChange();
+    toggleFields();
+  }
+
+    window.onload = checkOrderMode;
+
     function updatePrice() {
       var orderType = document.querySelector('select[name="order_type"]').value;
       var orderMode = document.querySelector('select[name="order_mode"]').value;
@@ -578,7 +665,7 @@ tr {
       {% endif %}
     </div>
 
-    <form method="post">
+    <form method="post" id="myForm">
       {% csrf_token %}
       <h2>Place Order</h2>
       <div class="input-group">
@@ -588,20 +675,23 @@ tr {
           <option value="SELL">Sell</option>
         </select>
       </div>
-      <div class="input-group">
-        <label for="is_ioc">Immediate or Cancellation Order</label>
-        <select name="is_ioc" class="form-control" onchange="handleIOCChange()">
-          <option value="False">No</option>
-          <option value="True">Yes</option>
-        </select>
-      </div>
+
       <div class="input-group">
         <label for="order_mode">Order Mode</label>
-        <select name="order_mode" class="form-control">
+        <select name="order_mode" id="order_mode" class="form-control" onchange="checkOrderMode()">
           <option value="MARKET">Market</option>
           <option value="LIMIT">Limit</option>
         </select>
       </div>
+      
+      <div class="input-group">
+        <label for="is_ioc">Immediate or Cancellation Order</label>
+        <select name="is_ioc" id="is_ioc" class="form-control" onchange="handleIOCChange()">
+          <option value="False">No</option>
+          <option value="True">Yes</option>
+        </select>
+      </div>
+      
       <div class="input-group">
         <label for="Stoploss_order">Stoploss Order</label>
         <select name="Stoploss_order" id="Stoploss_order" class="form-control" onchange="toggleFields()">
@@ -609,18 +699,30 @@ tr {
           <option value="YES">Yes</option>
         </select>
       </div>
+
       <div class="input-group" id="target_price_group" style="display: none;">
         <label for="Target_price">Target Price</label>
         <input type="number" step="0.01" name="Target_price" id="Target_price" class="form-control" disabled>
       </div>
-      <div class="input-group">
+      <!-- <div class="input-group">
         <label for="quantity">Quantity</label>
-        <input type="number" name="quantity" class="form-control" required>
+        <input type="number" id="quantity" name="quantity" class="form-control" required>
       </div>
       <div class="input-group">
         <label for="disclosed_quantity">Disclosed Quantity</label>
-        <input type="number" name="disclosed_quantity" class="form-control" required>
+        <input type="number" id="disclosed_quantity" name="disclosed_quantity" class="form-control" required>
+      </div> -->
+
+      <div class="input-group">
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" name="quantity" class="form-control" required>
       </div>
+      <div class="input-group">
+        <label for="disclosed_quantity">Disclosed Quantity</label>
+        <input type="number" id="disclosed_quantity" name="disclosed_quantity" class="form-control" required>
+      </div>
+
+
       {% comment %} <div class="input-group">
         <label for="is_ioc">Immediate or Cancellation Order</label>
         <select name="is_ioc" class="form-control">

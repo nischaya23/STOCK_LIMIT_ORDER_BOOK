@@ -78,29 +78,43 @@ WSGI_APPLICATION = "trading_system.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-'default': {
+# DATABASES = {
+# 'default': {
 
-        # 'ENGINE': 'django.db.backends.sqlite3',
+#         # 'ENGINE': 'django.db.backends.sqlite3',
 
-        'ENGINE': 'django.db.backends.postgresql',
+#         'ENGINE': 'django.db.backends.postgresql',
 
-        'NAME': 'mydb',
+#         'NAME': 'mydb',
 
-        'USER': 'myuser',
+#         'USER': 'myuser',
 
-        'PASSWORD': 'fac_chappa',
+#         'PASSWORD': 'fac_chappa',
 
-        'HOST': '13.235.13.91',
+#         'HOST': '13.235.13.91',
 
-        'PORT': '5432',
+#         'PORT': '5432',
        
-    # }
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     "NAME": BASE_DIR / "db.sqlite3",
+#     # }
+#     # 'default': {
+#     #     'ENGINE': 'django.db.backends.sqlite3',
+#     #     "NAME": BASE_DIR / "db.sqlite3",
 
-}}
+# }}
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'defaultdb',
+        'USER': 'avnadmin',
+        'PASSWORD': 'AVNS_oDL48ZDQK9C__oYZ6Y7',
+        'HOST': 'pg-2e467df3-akshatgarg715-d3e4.k.aivencloud.com',
+        'PORT': '14026',
+        'OPTIONS': {
+            'sslmode': 'require',
+        }
+    }
+}
 
 
 # Password validation
