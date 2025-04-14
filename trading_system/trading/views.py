@@ -211,18 +211,20 @@ def modify_order_page(request):
 def update_prev_order(request):
     if request.method == 'POST':
         try:
-            # Extract the order_id and quantity from the JSON body
+            # Extract the order_id, quantity, and price from the JSON body
             data = json.loads(request.body)
             order_id = data.get('order_id')
             new_quantity = data.get('quantity')
             new_disclosed = data.get('disclosed_quantity')
+            new_price = data.get('price')
 
-            # Validate the order_id and new_quantity as integers
+            # Validate the order_id, new_quantity, and new_price
             order_id = int(order_id)
             new_quantity = int(new_quantity)
             new_disclosed = int(new_disclosed)
+            new_price = float(new_price)
             
-            print(f"Received order update: Order ID = {order_id}, Quantity = {new_quantity}, Disclosed Quantity = {new_disclosed}")
+            print(f"Received order update: Order ID = {order_id}, Quantity = {new_quantity}, Disclosed Quantity = {new_disclosed}, Price = {new_price}")
               
             # Check if the order exists
             order = Order.objects.get(id=order_id)
@@ -232,8 +234,12 @@ def update_prev_order(request):
                 return JsonResponse({'success': False, 'message': 'Disclosed value must be greater then 10% of quantity.'})
             if new_disclosed > new_quantity:
                 return JsonResponse({'success': False, 'message': 'Cannot disclose more than the quantity.'})
+            if new_price <= 0:
+                return JsonResponse({'success': False, 'message': 'Price must be greater than 0.'})
+            
             order.quantity = new_quantity
             order.disclosed = new_disclosed
+            order.price = new_price
             order.save()
 
             return JsonResponse({'success': True})
