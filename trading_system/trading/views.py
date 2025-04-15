@@ -5,6 +5,7 @@ from django.db import transaction
 from django.contrib.auth.decorators import login_required
 import json
 from django.contrib import messages
+from django.utils import timezone
 
 from .utils import match_order  # Assuming match_order is in utils.py
 from django.http import JsonResponse
@@ -81,7 +82,7 @@ def home(request):
             if disclosed>quantity:
                 disclosed=quantity
 
-            if(stoploss_order=='NO'):
+            if(stoploss_order=='NO' or stoploss_order==None):
                     # Save or process the order here
                 new_order = Order(
                     order_type=order_type,
@@ -121,6 +122,7 @@ def home(request):
                     is_ioc=is_ioc,
                     user=user,
                 )
+                
 
                 if disclosed < 0.1 * quantity:  # disclosed_quantity should not be > 10% of quantity
                     messages.error(request, "Disclosed Quantity cannot be less than 10% greater than Quantity.")
@@ -129,6 +131,7 @@ def home(request):
                     # Proceed with saving the order or further logic
                     messages.success(request, "Stoploss Order placed successfully!")
                     new_order.save()
+                    execute_order()
                     messages.success(request, 'Your Stoploss order has been placed successfully!')
                     return redirect('/home')
 
@@ -141,9 +144,11 @@ def home(request):
     # Fetch orders associated with the user
     orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
     trades = Trade.objects.filter(Q(buyer=user) | Q(seller=user))
+    # changes:
+    stoploss_orders = Stoploss_Order.objects.filter(user=user)
 
 
-    return render(request, 'trading/home.html', {'user': user, 'orders': orders,'trades': trades})
+    return render(request, 'trading/home.html', {'user': user, 'orders': orders,'trades': trades,'stoploss_orders': stoploss_orders})
 
 
 
@@ -302,3 +307,83 @@ def cancel_order(request):
         except Exception as e:
             logger.error(f"Cancel order error: {str(e)}")
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
+        
+        
+    
+    # changes:
+    
+@login_required
+def cancel_stoploss_order(request):
+    if request.method == 'POST':
+        try:
+            logger.debug(f"Stoploss cancellation request received: {request.body}")
+            user = User.objects.get(username=request.user.username)
+            
+            data = json.loads(request.body)
+            order_id = data.get('order_id')
+            
+            with transaction.atomic():
+                order = Stoploss_Order.objects.get(
+                    id=order_id,
+                    user=user,
+                    is_matched=False
+                )
+                order.delete()
+            
+            return JsonResponse({'success': True, 'message': 'Stoploss order cancelled successfully'})
+        
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'User authentication failed'}, status=401)
+        except Stoploss_Order.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Order not found or already matched'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'message': 'Invalid request format'}, status=400)
+        except Exception as e:
+            logger.error(f"Cancel stoploss order error: {str(e)}")
+            return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+def execute_order():
+        last_trade=Trade.objects.last()
+        closing_price=last_trade.price
+        stop_loss_buy_orders = Stoploss_Order.objects.filter(order_type='BUY').order_by('target_price')
+        stop_loss_sell_orders= Stoploss_Order.objects.filter(order_type='SELL').order_by('-target_price')
+        print(closing_price)
+        if closing_price is not None:
+            # Process BY stop-loss orders
+            for buy_order in stop_loss_buy_orders:
+                
+                if buy_order.target_price <= closing_price:
+                    
+                        
+                    new_order = Order(
+                        user=buy_order.user,
+                        order_type=buy_order.order_type,
+                        order_mode=buy_order.order_mode,  # Assuming stop-loss orders are treated as limit orders
+                        quantity=buy_order.quantity,
+                        price=buy_order.price,  # Use target_price as the price for the order
+                        disclosed=buy_order.disclosed,
+                        original_quantity=buy_order.quantity,  # Copy disclosed quantity if it exists
+                        timestamp=timezone.now(),
+                        is_matched=False  # Mark as unmatched initially
+                    )
+                    new_order.save()
+                    match_order(new_order)
+                    buy_order.delete()
+                    
+            for sell_order in stop_loss_sell_orders:
+                if sell_order.target_price >= closing_price:
+                         # Move the order to the main Order table
+                    new_order = Order(
+                        user=sell_order.user,
+                        order_type=sell_order.order_type,
+                        order_mode=sell_order.order_mode,  # Assuming stop-loss orders are treated as limit orders
+                        quantity=sell_order.quantity,
+                        price=sell_order.price,  # Use target_price as the price for the order
+                        disclosed=sell_order.disclosed,  # Copy disclosed quantity if it exists
+                        timestamp=timezone.now(),
+                        original_quantity=sell_order.quantity,
+                        is_matched=False  # Mark as unmatched initially
+                    ) 
+                    new_order.save()
+                    match_order(new_order)
+                    sell_order.delete()
