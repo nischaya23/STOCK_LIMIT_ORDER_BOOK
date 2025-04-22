@@ -593,6 +593,54 @@ function checkOrderMode() {
           showFlashMessage(error.message || 'Cancellation failed', 'error');
       });
   }
+
+  {% comment %} changes {% endcomment %}
+  function cancelStoplossOrder(orderId) {
+    if (!confirm('Confirm cancellation of stoploss order?')) return;
+    
+    const row = document.getElementById(`stoploss-order-${orderId}`);
+    if (!row) {
+        showFlashMessage('Stoploss order not found in list', 'error');
+        return;
+    }
+  
+    // Immediate visual feedback
+    row.style.transition = 'all 0.1s ease';
+    row.style.opacity = '0.5';
+    row.style.transform = 'translateX(30px)';
+  
+    fetch("{% url 'cancel_stoploss_order' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ order_id: orderId })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Complete the removal animation
+            row.style.opacity = '0';
+            row.style.transform = 'translateX(-100%)';
+            setTimeout(() => row.remove(), 100);
+            
+            // Update counter if exists
+            const counter = document.getElementById('stoploss-order-count');
+            if (counter) counter.textContent = parseInt(counter.textContent) - 1;
+        }
+    })
+    .catch(error => {
+        console.error('Cancel failed:', error);
+        // Reset visual state
+        row.style.opacity = '1';
+        row.style.transform = 'none';
+        showFlashMessage(error.message || 'Stoploss order cancellation failed', 'error');
+    });
+  }
   
   // CSRF cookie helper function (add this)
   function getCookie(name) {
@@ -818,6 +866,56 @@ function checkOrderMode() {
         {% else %}
         <div class="flash-message alert-warning">
           <p>No completed trades found.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+{% comment %} changes {% endcomment %}
+    <div class="card">
+      <h2 class="change positive">Stoploss Orders</h2>
+      <div class="table-container">
+        {% if stoploss_orders %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Order Type</th>
+              <th>Order Mode</th>
+              <th>Quantity</th>
+              <th>Disclosed</th>
+              <th>Price</th>
+              <th>Target Price</th>
+              <th>Status</th>
+              <th>ID</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in stoploss_orders %}
+              {% if not order.is_matched %}
+                <tr id="stoploss-order-{{ order.id }}" data-order-id="{{ order.id }}">
+                  <td>{{ order.order_type }}</td>
+                  <td>{{ order.order_mode }}</td>
+                  <td>{{ order.quantity }}</td>
+                  <td>{{ order.disclosed }}</td>
+                  <td>{{ order.price }}</td>
+                  <td>{{ order.target_price }}</td>
+                  <td>{% if order.is_matched %}Matched{% else %}Active{% endif %}</td>
+                  <td>{{ order.id }}</td>
+                  <td>
+                    <button onclick="cancelStoplossOrder({{ order.id }})" 
+                            class="btn btn-danger" 
+                            style="padding: 8px 15px; font-size: 14px;">
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="flash-message alert-warning">
+          <p>No active stoploss orders found.</p>
         </div>
         {% endif %}
       </div>

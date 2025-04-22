@@ -22,5 +22,6 @@ urlpatterns = [
     path('modify_order/', views.modify_order_page, name='modify_order'),
     path('modify_order/update_prev_order/', views.update_prev_order, name='update_prev_order'),
     path('cancel_order/', views.cancel_order, name='cancel_order'),
+    path('cancel_stoploss_order/', views.cancel_stoploss_order, name='cancel_stoploss_order'),
 ]
 
