@@ -260,12 +260,12 @@ def clear_database(request):
 
 def get_buy_orders(request):
     if request.method == 'GET':
-        buy_orders = Order.objects.filter(order_type='BUY', is_matched = False).values('price','disclosed', 'is_matched', 'id','is_ioc')
+        buy_orders = Order.objects.filter(order_type='BUY', is_matched = False).values('user','price','disclosed', 'is_matched', 'id','is_ioc','quantity','original_quantity')
         return JsonResponse({'buy_orders': list(buy_orders)})
 
 def get_sell_orders(request):
     if request.method == 'GET':
-        sell_orders = Order.objects.filter(order_type='SELL', is_matched = False).values('price','disclosed', 'is_matched','is_ioc')
+        sell_orders = Order.objects.filter(order_type='SELL', is_matched = False).values('user','price','disclosed', 'is_matched','id','is_ioc','quantity','original_quantity')
         return JsonResponse({'sell_orders': list(sell_orders)})
 
 def get_recent_trades(request):
