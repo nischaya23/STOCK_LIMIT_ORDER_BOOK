@@ -125,6 +125,29 @@
       padding: 0 10px;
       min-width: 300px;
     }
+
+    .table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.table-header button {
+  padding: 6px 12px;
+  background-color: #007bff;
+  border: none;
+  color: white;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.table-header button:hover {
+  background-color: #0056b3;
+}
+
   </style>
 </head>
 <body>
@@ -150,13 +173,18 @@
     <!-- Buy and Sell Orders -->
     <div class="row">
       <div class="col">
-        <h3>Buy Orders</h3>
         <div class="table-responsive">
           <table id="buy-orders">
+            <div class="table-header">
+              <h3>Buy Orders</h3>
+              <button onclick="downloadBuyOrdersCSV()">⬇ Download CSV</button>
+            </div>
+            
             <thead>
               <tr>
                 <th>Price</th>
                 <th>Quantity</th>
+                <th>Disclosed</th>
               </tr>
             </thead>
             <tbody>
@@ -166,13 +194,18 @@
         </div>
       </div>
       <div class="col">
-        <h3>Sell Orders</h3>
+
+        <div class="table-header">
+          <h3>Sell Orders</h3>
+          <button onclick="downloadSellOrdersCSV()">⬇ Download CSV</button>
+        </div>
         <div class="table-responsive">
           <table id="sell-orders">
             <thead>
               <tr>
                 <th>Price</th>
                 <th>Quantity</th>
+                <th>Disclosed</th>
               </tr>
             </thead>
             <tbody>
@@ -183,10 +216,61 @@
       </div>
     </div>
 
+    
+    
+    
+
+
+    <!-- Order Details Modal -->
+<div id="order-modal" style="
+display: none;
+position: fixed;
+top: 0; left: 0;
+width: 100%; height: 100%;
+background: rgba(0,0,0,0.5);
+align-items: center; justify-content: center;
+">
+<div style="
+  background: #111;
+  padding: 1rem;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+  color: #fff;
+">
+<button id="modal-close" style="
+ float: right;
+ background: none;
+ border: none;
+ color: #aaa;
+ font-size: 1.5rem;
+ cursor: pointer;
+">&times;</button>
+<h4>Order Details at <span id="modal-price"></span></h4>
+<table id="modal-table" style="width:100%; border-collapse: collapse;">
+ <thead>
+   <tr>
+     <th>User</th>
+     <th>Quantity</th>
+     <th>Disclosed</th>
+     <th>Original_quantity</th>
+   </tr>
+ </thead>
+ <tbody></tbody>
+</table>
+</div>
+</div>
+
+
     <!-- Recent Trades -->
     <div class="row">
       <div class="col" style="flex: 100%;">
-        <h3>Recent Trades</h3>
+        <div class="table-header">
+          <h3>Recent Trades</h3>
+          <button onclick="downloadTradesCSV()">⬇ Download csv</button>
+        </div>
+        
         <div class="table-responsive">
           <table id="trades">
             <thead>
@@ -237,74 +321,418 @@
         .catch(error => console.error('Error fetching Best Ask:', error));
     }
 
-    function updateBuyOrders() {
-      fetch('get_buy_orders/')
-        .then(response => response.json())
-        .then(data => {
-          const tableBody = document.querySelector('#buy-orders tbody');
-          tableBody.innerHTML = '';
+function downloadBuyOrdersCSV() {
+  fetch('get_buy_orders/')
+    .then(response => response.json())
+    .then(data => {
+      const buyOrders = data.buy_orders;
+      const headers = ["price", "quantity", "disclosed", "user", "original_quantity"];
+      const rows = buyOrders.map(order => headers.map(h => {
+        let val = order[h];
+        return `"${(val ?? "").toString().replace(/"/g, '""')}"`;
+      }).join(','));
 
-          const groupedOrders = {};
-          data.buy_orders
-              .filter(order => !order.is_ioc)  
-              .forEach(order => {
-                if (!groupedOrders[order.price]) {
-                  groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched };
-                }
-                groupedOrders[order.price].disclosed += order.disclosed;
-              });
+      const csv = [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'buy_orders.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })
+    .catch(err => console.error('Error generating CSV:', err));
+}
 
-          const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
-            return parseFloat(b[0]) - parseFloat(a[0]); // Higher price first
-          });
+function downloadSellOrdersCSV() {
+  fetch('get_sell_orders/')
+    .then(response => response.json())
+    .then(data => {
+      const sellOrders = data.sell_orders;
+      const headers = ["price", "quantity", "disclosed", "user", "original_quantity"];
+      const rows = sellOrders.map(order => headers.map(h => {
+        let val = order[h];
+        return `"${(val ?? "").toString().replace(/"/g, '""')}"`;
+      }).join(','));
 
-          sortedOrders.forEach(([price, details]) => {
-            const row = `
-              <tr>
-                <td>${price}</td>
-                <td>${details.disclosed}</td>
-              </tr>`;
-            tableBody.innerHTML += row;
-          });
-        })
-        .catch(error => console.error('Error fetching Buy Orders:', error));
-    }
+      const csv = [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'sell_orders.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })
+    .catch(err => console.error('Error generating CSV:', err));
+}
 
-    function updateSellOrders() {
-      fetch('get_sell_orders/')
-        .then(response => response.json())
-        .then(data => {
-          const tableBody = document.querySelector('#sell-orders tbody');
-          tableBody.innerHTML = '';
 
-          const groupedOrders = {};
-          data.sell_orders
-              .filter(order => !order.is_ioc)  
-              .forEach(order => {
-                const disclosed = parseFloat(order.disclosed);
-                const price = parseFloat(order.price);
-                if (isNaN(disclosed) || isNaN(price)) return;
-                if (!groupedOrders[price]) {
-                  groupedOrders[price] = { disclosed: 0, is_matched: order.is_matched };
-                }
-                groupedOrders[price].disclosed += disclosed;
-              });
 
-          const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
-            return parseFloat(a[0]) - parseFloat(b[0]); // Lower price first
-          });
+    // function updateBuyOrders() {
+    //   fetch('get_buy_orders/')
+    //     .then(response => response.json())
+    //     .then(data => {
+    //       const tableBody = document.querySelector('#buy-orders tbody');
+    //       tableBody.innerHTML = '';
 
-          sortedOrders.forEach(([price, details]) => {
-            const row = `
-              <tr>
-                <td>${price}</td>
-                <td>${details.disclosed}</td>
-              </tr>`;
-            tableBody.innerHTML += row;
-          });
-        })
-        .catch(error => console.error('Error fetching Sell Orders:', error));
-    }
+    //       const groupedOrders = {};
+    //       data.buy_orders
+    //           .filter(order => !order.is_ioc)  
+    //           .forEach(order => {
+    //             if (!groupedOrders[order.price]) {
+    //               groupedOrders[order.price] = { disclosed: 0, is_matched: order.is_matched };
+    //             }
+    //             groupedOrders[order.price].disclosed += order.disclosed;
+    //           });
+
+    //       const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+    //         return parseFloat(b[0]) - parseFloat(a[0]); // Higher price first
+    //       });
+
+    //       sortedOrders.forEach(([price, details]) => {
+    //         const row = `
+    //           <tr>
+    //             <td>${price}</td>
+    //             <td>${details.disclosed}</td>
+    //           </tr>`;
+    //         tableBody.innerHTML += row;
+    //       });
+    //     })
+    //     .catch(error => console.error('Error fetching Buy Orders:', error));
+    // }
+
+
+//     function updateBuyOrders() {
+//   fetch('get_buy_orders/')
+//     .then(response => response.json())
+//     .then(data => {
+//       const tableBody = document.querySelector('#buy-orders tbody');
+//       tableBody.innerHTML = '';
+
+//       const groupedOrders = {};
+//       data.buy_orders
+//         .filter(order => !order.is_ioc)
+//         .forEach(order => {
+//           if (!groupedOrders[order.price]) {
+//             groupedOrders[order.price] = { quantity: 0, disclosed: 0 };
+//           }
+//           groupedOrders[order.price].quantity += order.quantity ?? order.disclosed; // Use quantity if available
+//           groupedOrders[order.price].disclosed += order.disclosed;
+//         });
+
+//       const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+//         return parseFloat(b[0]) - parseFloat(a[0]); // Higher price first
+//       });
+
+//       sortedOrders.forEach(([price, details]) => {
+//         const row = `
+//           <tr>
+//             <td>${price}</td>
+//             <td>${details.quantity}</td>
+//             <td>${details.disclosed}</td>
+//           </tr>`;
+//         tableBody.innerHTML += row;
+//       });
+//     })
+//     .catch(error => console.error('Error fetching Buy Orders:', error));
+// }
+
+// function updateBuyOrders() {
+//   fetch('get_buy_orders/')
+//     .then(response => response.json())
+//     .then(data => {
+//       const tableBody = document.querySelector('#buy-orders tbody');
+//       tableBody.innerHTML = '';
+
+//       const groupedOrders = {};
+//       data.buy_orders
+//         .filter(order => !order.is_ioc)
+//         .forEach(order => {
+//           if (!groupedOrders[order.price]) {
+//             groupedOrders[order.price] = { quantity: 0, disclosed: 0 };
+//           }
+//           groupedOrders[order.price].quantity += order.quantity;
+//           groupedOrders[order.price].disclosed += order.disclosed;
+//         });
+
+//       const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+//         return parseFloat(b[0]) - parseFloat(a[0]); // Higher price first
+//       });
+
+//       sortedOrders.forEach(([price, details]) => {
+//         const row = `
+//           <tr>
+//             <td>${price}</td>
+//             <td>${details.quantity}</td>
+//             <td>${details.disclosed}</td>
+//           </tr>`;
+//         tableBody.innerHTML += row;
+//       });
+//     })
+//     .catch(error => console.error('Error fetching Buy Orders:', error));
+// }
+
+
+// function updateBuyOrders() {
+//   fetch('get_buy_orders/')
+//     .then(res => res.json())
+//     .then(data => {
+//       const tbody = document.querySelector('#buy-orders tbody');
+//       tbody.innerHTML = '';
+
+//       // group by price
+//       const grouped = {};
+//       data.buy_orders
+//         .filter(o => !o.is_ioc)
+//         .forEach(o => {
+//           const price = o.price;
+//           // parse quantity (or default 0) and disclosed
+//           const qty   = parseFloat(o.quantity) || 0;
+//           const disc  = parseFloat(o.disclosed) || 0;
+
+//           if (!grouped[price]) {
+//             grouped[price] = { quantity: 0, disclosed: 0 };
+//           }
+//           grouped[price].quantity += qty;
+//           grouped[price].disclosed += disc;
+//         });
+
+//       // sort descending by price
+//       Object.entries(grouped)
+//             .sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]))
+//             .forEach(([price, { quantity, disclosed }]) => {
+//               const row = document.createElement('tr');
+//               row.innerHTML = `
+//                 <td>${price}</td>
+//                 <td>${quantity}</td>
+//                 <td>${disclosed}</td>
+//               `;
+//               tbody.appendChild(row);
+//             });
+//     })
+//     .catch(err => console.error('Error fetching buy orders:', err));
+// }
+
+
+let buyOrdersByPrice = {};
+
+// call this once on page load (or whenever you need)
+function updateBuyOrders() {
+  fetch('get_buy_orders/')
+    .then(r => r.json())
+    .then(data => {
+      const tbody = document.querySelector('#buy-orders tbody');
+      tbody.innerHTML = '';
+      buyOrdersByPrice = {};
+
+      // 1. group & stash raw orders
+      const grouped = {};
+      data.buy_orders
+        .filter(o => !o.is_ioc)
+        .forEach(o => {
+          const price = parseFloat(o.price).toFixed(2);
+          const qty   = parseFloat(o.quantity)  || 0;
+          const disc  = parseFloat(o.disclosed) || 0;
+
+          // grouping sums
+          if (!grouped[price]) grouped[price] = { quantity: 0, disclosed: 0 };
+          grouped[price].quantity  += qty;
+          grouped[price].disclosed += disc;
+
+          // keep list of raw orders
+          if (!buyOrdersByPrice[price]) buyOrdersByPrice[price] = [];
+          buyOrdersByPrice[price].push(o);
+        });
+
+      // 2. render rows & attach click
+      Object.entries(grouped)
+        .sort((a,b) => parseFloat(b[0]) - parseFloat(a[0]))
+        .forEach(([price, {quantity, disclosed}]) => {
+          const tr = document.createElement('tr');
+          tr.style.cursor = 'pointer';
+          tr.innerHTML = `
+            <td>${price}</td>
+            <td>${quantity}</td>
+            <td>${disclosed}</td>
+          `;
+          tr.addEventListener('click', () => showOrderDetails(price, 'buy'));
+          tbody.appendChild(tr);
+        });
+    })
+    .catch(console.error);
+}
+
+function showOrderDetails(price, side) {
+  // pick the right map
+  const map = side === 'sell'
+    ? sellOrdersByPrice
+    : buyOrdersByPrice;
+
+  const orders = map[price] || [];
+  const modal      = document.getElementById('order-modal');
+  const tbody      = modal.querySelector('#modal-table tbody');
+  const priceSpan  = document.getElementById('modal-price');
+
+  priceSpan.textContent = price;
+  tbody.innerHTML = '';
+
+  orders.forEach(o => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${o.user || 'N/A'}</td>
+      <td>${parseFloat(o.quantity)  || 0}</td>
+      <td>${parseFloat(o.disclosed) || 0}</td>
+      <td>${o.original_quantity}</td>
+      
+    `;
+    tbody.appendChild(row);
+  });
+
+  modal.style.display = 'flex';
+}
+
+// close button
+document.getElementById('modal-close')
+        .addEventListener('click', () => {
+  document.getElementById('order-modal').style.display = 'none';
+});
+
+
+
+
+
+    // function updateSellOrders() {
+    //   fetch('get_sell_orders/')
+    //     .then(response => response.json())
+    //     .then(data => {
+    //       const tableBody = document.querySelector('#sell-orders tbody');
+    //       tableBody.innerHTML = '';
+
+    //       const groupedOrders = {};
+    //       data.sell_orders
+    //           .filter(order => !order.is_ioc)  
+    //           .forEach(order => {
+    //             const disclosed = parseFloat(order.disclosed);
+    //             const price = parseFloat(order.price);
+    //             if (isNaN(disclosed) || isNaN(price)) return;
+    //             if (!groupedOrders[price]) {
+    //               groupedOrders[price] = { disclosed: 0, is_matched: order.is_matched };
+    //             }
+    //             groupedOrders[price].disclosed += disclosed;
+    //           });
+
+    //       const sortedOrders = Object.entries(groupedOrders).sort((a, b) => {
+    //         return parseFloat(a[0]) - parseFloat(b[0]); // Lower price first
+    //       });
+
+    //       sortedOrders.forEach(([price, details]) => {
+    //         const row = `
+    //           <tr>
+    //             <td>${price}</td>
+    //             <td>${details.disclosed}</td>
+    //           </tr>`;
+    //         tableBody.innerHTML += row;
+    //       });
+    //     })
+    //     .catch(error => console.error('Error fetching Sell Orders:', error));
+    // }
+
+
+//     function updateSellOrders() {
+//   fetch('get_sell_orders/')
+//     .then(res => res.json())
+//     .then(data => {
+//       const tbody = document.querySelector('#sell-orders tbody');
+//       tbody.innerHTML = '';
+
+//       // 1) Group orders by price
+//       const grouped = {};
+//       data.sell_orders
+//         .filter(o => !o.is_ioc)
+//         .forEach(o => {
+//           const price     = String(o.price);
+//           const qty       = parseFloat(o.quantity)  || 0;
+//           const disclosed = parseFloat(o.disclosed) || 0;
+
+//           if (!grouped[price]) {
+//             grouped[price] = { quantity: 0, disclosed: 0 };
+//           }
+//           grouped[price].quantity   += qty;
+//           grouped[price].disclosed  += disclosed;
+//         });
+
+//       // 2) Sort ascending by price
+//       Object.entries(grouped)
+//         .sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]))
+//         .forEach(([price, { quantity, disclosed }]) => {
+//           // 3) Build row with Price, Quantity, Disclosed
+//           const tr = document.createElement('tr');
+//           tr.innerHTML = `
+//             <td>${price}</td>
+//             <td>${quantity}</td>
+//             <td>${disclosed}</td>
+//           `;
+//           tbody.appendChild(tr);
+//         });
+//     })
+//     .catch(err => console.error('Error fetching Sell Orders:', err));
+// }
+
+
+let sellOrdersByPrice = {};
+function updateSellOrders() {
+  fetch('get_sell_orders/')
+    .then(r => r.json())
+    .then(data => {
+      const tbody = document.querySelector('#sell-orders tbody');
+      tbody.innerHTML = '';
+      sellOrdersByPrice = {};
+
+      // 1) Group & store raw:
+      const grouped = {};
+      data.sell_orders
+        .filter(o => !o.is_ioc)
+        .forEach(o => {
+          const price     = parseFloat(o.price).toFixed(2);
+          const qty       = parseFloat(o.quantity)  || 0;
+          const disclosed = parseFloat(o.disclosed) || 0;
+
+          // sums for the row
+          if (!grouped[price]) grouped[price] = { quantity: 0, disclosed: 0 };
+          grouped[price].quantity  += qty;
+          grouped[price].disclosed += disclosed;
+
+          // stash raw for modal
+          if (!sellOrdersByPrice[price]) sellOrdersByPrice[price] = [];
+          sellOrdersByPrice[price].push(o);
+        });
+
+      // 2) Render sorted rows (lowest price first)
+      Object.entries(grouped)
+        .sort((a, b) => parseFloat(a[0]) - parseFloat(b[0]))
+        .forEach(([price, { quantity, disclosed }]) => {
+          const tr = document.createElement('tr');
+          tr.style.cursor = 'pointer';
+          tr.innerHTML = `
+            <td>${price}</td>
+            <td>${quantity}</td>
+            <td>${disclosed}</td>
+          `;
+          // wire up click to reuse the same modal:
+          tr.addEventListener('click', () => showOrderDetails(price, 'sell'));
+          tbody.appendChild(tr);
+        });
+    })
+    .catch(console.error);
+}
+
+
+
 
     function updateRecentTrades() {
       fetch('get_recent_trades/')
@@ -326,6 +754,32 @@
         })
         .catch(error => console.error('Error fetching Recent Trades:', error));
     }
+
+    function downloadTradesCSV() {
+  fetch('get_recent_trades/')
+    .then(response => response.json())
+    .then(data => {
+      const trades = data.trades;
+      const headers = ["buyer", "seller", "price", "quantity", "timestamp"];
+      const rows = trades.map(trade => headers.map(h => {
+        let val = trade[h];
+        return `"${(val ?? "").toString().replace(/"/g, '""')}"`;
+      }).join(','));
+
+      const csv = [headers.join(','), ...rows].join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'recent_trades.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    })
+    .catch(err => console.error('Error generating CSV:', err));
+}
+
 
     document.addEventListener('DOMContentLoaded', function () {
       setInterval(() => {

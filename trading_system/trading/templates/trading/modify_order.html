@@ -136,6 +136,10 @@
             <label for="disclose">Disclosed Quantity</label>
             <input type="number" class="form-control" id="disclose" name="disclose" required>
           </div>
+          <div class="form-group">
+            <label for="price">Price</label>
+            <input type="number" step="0.01" class="form-control" id="price" name="price" required>
+          </div>
           <button type="submit">Save Changes</button>
         </form>
       </div>
@@ -154,10 +158,11 @@
         const orderId = document.getElementById('order-id').value;
         const quantity = document.getElementById('quantity').value;
         const discloseQ = document.getElementById('disclose').value;
+        const price = document.getElementById('price').value;
 
-        // Check if both orderId and quantity are valid numbers
-        if (!orderId || !quantity || isNaN(orderId) || isNaN(quantity) || isNaN(discloseQ)) {
-          alert('Please enter valid values for Order ID, Quantity and diisclose quantity.');
+        // Check if all values are valid numbers
+        if (!orderId || !quantity || !price || isNaN(orderId) || isNaN(quantity) || isNaN(discloseQ) || isNaN(price)) {
+          alert('Please enter valid values for Order ID, Quantity, Disclosed Quantity and Price.');
           return;
         }
 
@@ -166,6 +171,7 @@
           order_id: parseInt(orderId),
           quantity: parseInt(quantity),
           disclosed_quantity: parseInt(discloseQ),
+          price: parseFloat(price)
         };
 
         // Send the data via a POST request

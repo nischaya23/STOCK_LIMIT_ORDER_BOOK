@@ -704,12 +704,13 @@ function checkOrderMode() {
     {% endif %}
 
     <div class="grid-links">
-      <a href="{% url 'orderbook' %}" target="_blank">Order Book</a>
+      
       <a href="{% url 'modify_order' %}" target="_blank">Modify Order</a>
       <a href="{% url 'password_reset' %}" >Reset Password</a>
       {% if request.user.is_superuser %}
       <a href="{% url 'bulk_user_upload' %}" >Bulk User Upload</a>
       <a href="{% url 'bulk_user_delete' %}" >Bulk User Deletion</a>
+      <a href="{% url 'orderbook' %}" target="_blank">Order Book</a>
       {% endif %}
     </div>
 
