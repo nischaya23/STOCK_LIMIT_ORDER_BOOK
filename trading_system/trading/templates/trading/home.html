@@ -594,7 +594,7 @@ function checkOrderMode() {
       });
   }
 
-  {% comment %} changes {% endcomment %}
+  // {% comment %} changes {% endcomment %}
   function cancelStoplossOrder(orderId) {
     if (!confirm('Confirm cancellation of stoploss order?')) return;
     
@@ -658,10 +658,10 @@ function checkOrderMode() {
       return cookieValue;
   } 
 
-  {% comment %} function getCSRFToken() {
-    return document.querySelector('[name=csrfmiddlewaretoken]').value;
-}
-   {% endcomment %}
+  //{% comment %} function getCSRFToken() {
+  //  return document.querySelector('[name=csrfmiddlewaretoken]').value;
+// }
+  //  {% endcomment %}
   // Enhanced flash message display
   function showFlashMessage(message, type) {
       const container = document.getElementById('flash-messages') || document.body;
@@ -701,6 +701,19 @@ function checkOrderMode() {
         {% endfor %}
       </div>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const messages = document.querySelectorAll('#flash-messages .alert');
+
+      messages.forEach((msg) => {
+        setTimeout(() => {
+          msg.style.transition = 'opacity 0.5s ease-out';
+          msg.style.opacity = '0';
+          setTimeout(() => msg.remove(), 500);
+        }, 3000); // 3-second lag
+      });
+    });
+  </script>
     {% endif %}
 
     <div class="grid-links">
@@ -817,7 +830,7 @@ function checkOrderMode() {
                   <!-- <td>Unmatched</td> -->
                   <td>{{ order.id }}</td>
                   <td>
-                    <button onclick="cancelOrder({{ order.id }})" 
+                    <button onclick="cancelOrder('{{ order.id }}')"
                             class="btn btn-danger" 
                             style="padding: 8px 15px; font-size: 14px;">
                       Cancel
@@ -903,7 +916,7 @@ function checkOrderMode() {
                   <td>{% if order.is_matched %}Matched{% else %}Active{% endif %}</td>
                   <td>{{ order.id }}</td>
                   <td>
-                    <button onclick="cancelStoplossOrder({{ order.id }})" 
+                    <button onclick="cancelStoplossOrder('{{ order.id }}')" 
                             class="btn btn-danger" 
                             style="padding: 8px 15px; font-size: 14px;">
                       Cancel

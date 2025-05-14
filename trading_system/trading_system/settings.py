@@ -39,7 +39,10 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'trading'
+    'trading',
+    'channels',
+    'daphne',
+    'trading_system',
 ]
 
 MIDDLEWARE = [
@@ -70,7 +73,7 @@ TEMPLATES = [
     },
 ]
 
-
+ASGI_APPLICATION = "trading_system.asgi.application"
 WSGI_APPLICATION = "trading_system.wsgi.application"
 # AUTH_USER_MODEL = 'trading.User'  # Replace with your actual app name
 
