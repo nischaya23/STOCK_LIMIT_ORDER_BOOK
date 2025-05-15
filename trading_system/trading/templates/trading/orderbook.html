@@ -791,5 +791,28 @@ function updateSellOrders() {
       }, 5000); // Update every 1 second
     });
   </script>
+  <script>
+    const socket = new WebSocket('ws://' + window.location.host + '/ws/orderbook/');
+
+    socket.onopen = function (e) {
+      console.log('WebSocket connected.');
+    };
+
+    socket.onmessage = function (e) {
+      const data = JSON.parse(e.data);
+      console.log("Data from server:", data);
+
+      const container = document.getElementById('orderbook-container');
+      container.innerHTML = "<pre>" + JSON.stringify(data, null, 2) + "</pre>";
+    };
+
+    socket.onclose = function (e) {
+      console.log('WebSocket closed.');
+    };
+
+    socket.onerror = function (e) {
+      console.error("WebSocket error:", e);
+    };
+  </script>
 </body>
 </html>
