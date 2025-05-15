@@ -4,6 +4,8 @@ from .models import Order, Trade
 from .models import Stoploss_Order as StopLossOrder
 from django.db.models import F
 from datetime import timedelta
+from .tasks import broadcast_orderbook
+
 
 
 def match_order(new_order):
@@ -104,15 +106,19 @@ def match_order(new_order):
                     break
                 
                 match_quantity = min(remaining_quantity, opposite_order.quantity)
-                closing_price = opposite_order.price if new_order.order_mode == 'LIMIT' else opposite_order.price
-
+                # closing_price = opposite_order.price if new_order.order_mode == 'LIMIT' else opposite_order.price
+                if new_order.order_mode == 'LIMIT':
+                    match_price = opposite_order.price
+                # For market orders, the price is taken from the best available order
+                else:
+                    match_price = opposite_order.price
         
                 # Create a trade entry for the matched orders
                 Trade.objects.create(
                     buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
                     seller=opposite_order.user if new_order.order_type == 'BUY' else new_order.user,
                     quantity=match_quantity,
-                    price= closing_price,
+                    price= match_price,
                     timestamp=timezone.now()
                 )
 
@@ -147,7 +153,7 @@ def match_order(new_order):
             # Ensure that any remaining unmatched orders are still available for future matches
             
             new_order.timestamp = timezone.now()
-            process_stoploss_orders(closing_price)
+            # process_stoploss_orders(closing_price)
             new_order.save()
             
         else:
@@ -161,7 +167,7 @@ def match_order(new_order):
                         complete_order=True
                         break
                     match_quantity=min(opposite_order.quantity,remaining_quantity)
-                    closing_price=opposite_order.price
+                    # closing_price=opposite_order.price
                     if(match_quantity==opposite_order.quantity):
                         Trade.objects.create(
                             buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
@@ -186,7 +192,7 @@ def match_order(new_order):
                             buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
                             seller=opposite_order.user if new_order.order_type == 'BUY' else new_order.user,
                             quantity=match_quantity,
-                            price=closing_price,
+                            price=opposite_order.price,
                             timestamp=timezone.now()
                         )
                         remaining_quantity-=match_quantity
@@ -196,8 +202,9 @@ def match_order(new_order):
                             opposite_order.disclosed=opposite_order.quantity
                         if(new_order.disclosed>new_order.quantity):# < to > Akshat
                             new_order.disclosed=new_order.quantity
-                        if(match_quantity == opposite_order.quantity):
-                            opposite_order.is_matched = True
+                        # if(match_quantity == opposite_order.quantity):
+                        #     opposite_order.is_matched = True
+                        new_order.is_matched=True
                         opposite_order.save()
                         new_order.save()
             except Exception as e:
@@ -211,7 +218,9 @@ def match_order(new_order):
                 new_order.save()
                 print("Incomplete order Placed")
             
-            process_stoploss_orders(closing_price)
+            # process_stoploss_orders(closing_price)
+    broadcast_orderbook()
+
                
 
 
