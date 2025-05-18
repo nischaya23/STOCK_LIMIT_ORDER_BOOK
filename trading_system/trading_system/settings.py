@@ -38,9 +38,23 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    'daphne',
     "django.contrib.staticfiles",
-    'trading'
+    'trading',
+    'channels',
+    'uvicorn',
+    'channels_redis',
 ]
+ASGI_APPLICATION = "trading_system.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
+    },
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -77,29 +91,18 @@ WSGI_APPLICATION = "trading_system.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = {
-'default': {
-
-        # 'ENGINE': 'django.db.backends.sqlite3',
-
+DATABASES = { 'default': {
         'ENGINE': 'django.db.backends.postgresql',
-
-        'NAME': 'mydb',
-
-        'USER': 'myuser',
-
-        'PASSWORD': 'fac_chappa',
-
-        'HOST': '13.235.13.91',
-
-        'PORT': '5432',
-       
-    # }
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     "NAME": BASE_DIR / "db.sqlite3",
-
-}}
+        'NAME': 'defaultdb',
+        'USER': 'avnadmin',
+        'PASSWORD': 'AVNS_oDL48ZDQK9C__oYZ6Y7',
+        'HOST': 'pg-2e467df3-akshatgarg715-d3e4.k.aivencloud.com',
+        'PORT': '14026',
+        'OPTIONS': {
+            'sslmode': 'require',
+        }
+    }
+}
 
 
 # Password validation
@@ -112,7 +115,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/
-
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"

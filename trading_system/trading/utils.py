@@ -1,6 +1,9 @@
 from django.db import transaction
 from django.utils import timezone
 from .models import Order, Trade
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
 
 def match_order(new_order):
     print("match")
@@ -14,6 +17,7 @@ def match_order(new_order):
                 price__lte=new_order.price, 
                 is_matched=False
             ).order_by('price', 'timestamp')
+            broadcast_orderbook_update()
         
         # For a SELL limit order, we are looking for BUY orders at the same price or higher
         elif new_order.order_type == 'SELL' and new_order.order_mode == 'LIMIT':
@@ -23,6 +27,7 @@ def match_order(new_order):
                 price__gte=new_order.price, 
                 is_matched=False
             ).order_by('-price', 'timestamp')
+            broadcast_orderbook_update()
 
         # For a BUY market order, we are looking for SELL orders with the lowest price
         elif new_order.order_type == 'BUY' and new_order.order_mode == 'MARKET':
@@ -30,6 +35,7 @@ def match_order(new_order):
                 order_type='SELL', 
                 is_matched=False
             ).order_by('price', 'timestamp')
+            broadcast_orderbook_update()
 
         # For a SELL market order, we are looking for BUY orders with the highest price
         elif new_order.order_type == 'SELL' and new_order.order_mode == 'MARKET':
@@ -37,6 +43,7 @@ def match_order(new_order):
                 order_type='BUY', 
                 is_matched=False
             ).order_by('-price', 'timestamp')
+            broadcast_orderbook_update()
 
         # Immediate or Cancellation (IOC) orders
         if new_order.is_ioc:
@@ -57,11 +64,14 @@ def match_order(new_order):
                     price=opposite_order.price,
                     timestamp=timezone.now()
                 )
+                broadcast_orderbook_update()
                 
                 # Update quantities
                 executed_quantity += match_quantity
                 new_order.quantity -= match_quantity
                 opposite_order.quantity -= match_quantity
+
+                broadcast_orderbook_update()
                 
                 # Update disclosed quantity if needed
                 if(opposite_order.disclosed>opposite_order.quantity):# < to > Akshat
@@ -69,10 +79,15 @@ def match_order(new_order):
                 if(new_order.disclosed>new_order.quantity):# < to > Akshat
                     new_order.disclosed=new_order.quantity
                 
+                broadcast_orderbook_update()
+
+            
+                
                 # Update opposite order status
                 if opposite_order.quantity == 0:
                     opposite_order.is_matched = True
                 opposite_order.save()
+                broadcast_orderbook_update
             
             # Handle IOC order after matching
             if executed_quantity>0:
@@ -82,11 +97,13 @@ def match_order(new_order):
                 new_order.disclosed=0 
                 print("saved1")
                 new_order.save()
+                broadcast_orderbook_update
                 return  # To prevent further processing
             else:
                 # Completely unexecuted:delete the order
                 print("delete1")
                 new_order.delete()
+                broadcast_orderbook_update
                 return
 
         # Try to match with the opposite orders
@@ -113,6 +130,7 @@ def match_order(new_order):
                     price=match_price,
                     timestamp=timezone.now()
                 )
+                broadcast_orderbook_update
 
                 # Update the quantities of the matched orders
                 remaining_quantity -= match_quantity
@@ -124,27 +142,33 @@ def match_order(new_order):
                     new_order.disclosed=new_order.quantity
                 opposite_order.save()
                 new_order.save()
+                broadcast_orderbook_update()
 
                 # If the opposite order is fully matched, mark it as matched
                 if opposite_order.quantity == 0:
                     opposite_order.is_matched = True
                     opposite_order.save()
+                    broadcast_orderbook_update()
 
                 # If the new order is fully matched, mark it as matched
                 if new_order.quantity == 0:
                     new_order.is_matched = True
                     new_order.save()
+                    broadcast_orderbook_update()
 
             # If the new order is partially matched, update its quantity and status
             if new_order.quantity > 0:
                 new_order.save()
+                broadcast_orderbook_update()
             else:
                 new_order.is_matched = True
                 new_order.save()
+                broadcast_orderbook_update()
 
             # Ensure that any remaining unmatched orders are still available for future matches
             new_order.timestamp = timezone.now()
             new_order.save()
+            broadcast_orderbook_update()
         else:
             remaining_quantity=new_order.quantity
             complete_order=False
@@ -163,6 +187,7 @@ def match_order(new_order):
                             price=opposite_order.price,
                             timestamp=timezone.now()
                         )
+                        broadcast_orderbook_update()
                         remaining_quantity-=match_quantity
                         opposite_order.quantity -= match_quantity
                         new_order.quantity -= match_quantity
@@ -172,7 +197,9 @@ def match_order(new_order):
                             new_order.disclosed=new_order.quantity
                         opposite_order.is_matched = True
                         opposite_order.save()
+                        broadcast_orderbook_update
                         new_order.save()
+                        broadcast_orderbook_update
                     else:
                         Trade.objects.create(
                             buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,
@@ -181,6 +208,7 @@ def match_order(new_order):
                             price=opposite_order.price,
                             timestamp=timezone.now()
                         )
+                        broadcast_orderbook_update()
                         remaining_quantity-=match_quantity
                         opposite_order.quantity -= match_quantity
                         new_order.quantity -= match_quantity
@@ -190,7 +218,9 @@ def match_order(new_order):
                             new_order.disclosed=new_order.quantity
                         new_order.is_matched=True
                         opposite_order.save()
+                        broadcast_orderbook_update()
                         new_order.save()
+                        broadcast_orderbook_update()
             except Exception as e:
                 print('Some Error Occured')
             
@@ -200,12 +230,60 @@ def match_order(new_order):
                 new_order.quantity=0
                 new_order.is_matched=True
                 new_order.save()
+                broadcast_orderbook_update()
                 print("Incomplete order Placed")
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
-               
-                
-            
+def broadcast_orderbook_update():
+    from .models import Order, Trade
+
+    buy_orders = Order.objects.filter(order_type='BUY', is_matched=False).order_by('-price')
+    sell_orders = Order.objects.filter(order_type='SELL', is_matched=False).order_by('price')
+    recent_trades = Trade.objects.order_by('-timestamp')[:10]
+
+    best_bid = buy_orders.first()
+    best_ask = sell_orders.first()
+
+    payload = {
+        'best_bid': {
+            'price': float(best_bid.price),
+            'disclosed': best_bid.disclosed,
+        } if best_bid else None,
+        'best_ask': {
+            'price': float(best_ask.price),
+            'disclosed': best_ask.disclosed,
+        } if best_ask else None,
+        'buy_orders': [
+            {
+                'price': float(o.price),
+                'disclosed': o.disclosed,
+            } for o in buy_orders
+        ],
+        'sell_orders': [
+            {
+                'price': float(o.price),
+                'disclosed': o.disclosed,
+            } for o in sell_orders
+        ],
+        'trades': [
+            {
+                'buyer': t.buyer.username,
+                'seller': t.seller.username,
+                'price': float(t.price),
+                'quantity': t.quantity,
+                'timestamp': t.timestamp.isoformat(),
+            } for t in recent_trades
+        ]
+    }
 
 
-
-
+    channel_layer = get_channel_layer()
+    async_to_sync(channel_layer.group_send)(
+        'orderbook_group',
+        {
+            'type': 'send_order_update',
+            'payload': payload,
+        }
+    )
+    print("Orderbook updated and broadcasted")

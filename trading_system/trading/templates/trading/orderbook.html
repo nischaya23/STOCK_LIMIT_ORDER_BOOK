@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Orderbook Dashboard</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
   <style>
@@ -136,13 +136,13 @@
       <div class="col">
         <div class="card">
           <h4>Best Bid</h4>
-          <p id="best-bid">Loading...</p>
+          <p id="best-bid">Waiting for update...</p>
         </div>
       </div>
       <div class="col">
         <div class="card">
           <h4>Best Ask</h4>
-          <p id="best-ask">Loading...</p>
+          <p id="best-ask">Waiting for update...</p>
         </div>
       </div>
     </div>
@@ -154,14 +154,9 @@
         <div class="table-responsive">
           <table id="buy-orders">
             <thead>
-              <tr>
-                <th>Price</th>
-                <th>Quantity</th>
-              </tr>
+              <tr><th>Price</th><th>Quantity</th></tr>
             </thead>
-            <tbody>
-              <tr><td colspan="2">Loading...</td></tr>
-            </tbody>
+            <tbody><tr><td colspan="2">Waiting for update...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -170,14 +165,9 @@
         <div class="table-responsive">
           <table id="sell-orders">
             <thead>
-              <tr>
-                <th>Price</th>
-                <th>Quantity</th>
-              </tr>
+              <tr><th>Price</th><th>Quantity</th></tr>
             </thead>
-            <tbody>
-              <tr><td colspan="2">Loading...</td></tr>
-            </tbody>
+            <tbody><tr><td colspan="2">Waiting for update...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -191,23 +181,17 @@
           <table id="trades">
             <thead>
               <tr>
-                <th>Buyer</th>
-                <th>Seller</th>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Timestamp</th>
+                <th>Buyer</th><th>Seller</th><th>Price</th><th>Quantity</th><th>Timestamp</th>
               </tr>
             </thead>
-            <tbody>
-              <tr><td colspan="5">Loading...</td></tr>
-            </tbody>
+            <tbody><tr><td colspan="5">Waiting for update...</td></tr></tbody>
           </table>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Scripts for Dynamic Updates -->
+  <!-- WebSocket Connection -->
   <script>
     function updateBestBid() {
       fetch('get_best_bid/')
@@ -327,15 +311,85 @@
         .catch(error => console.error('Error fetching Recent Trades:', error));
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-      setInterval(() => {
-        updateBuyOrders();
-        updateSellOrders();
-        updateRecentTrades();
-        updateBestBid();
-        updateBestAsk();
-      }, 1000); // Update every 1 second
+    document.addEventListener('DOMContentLoaded', function (){
+      updateBuyOrders();
+      updateSellOrders();
+      updateRecentTrades();
+      updateBestBid();
+      updateBestAsk();
     });
-  </script>
+    const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const socket = new WebSocket(`${ws_scheme}://${window.location.host}/ws/orderbook/`);
+  
+    socket.onopen = () => {
+      console.log("WebSocket connection established");
+    };
+  
+    socket.onmessage = (event) => {
+      const raw = JSON.parse(event.data);
+      const data = raw.data || raw;  // Extract the actual payload (for both snapshot or update)
+  
+      // Debug
+      console.log("Received WebSocket data:", raw);
+  
+      // Hide "Waiting for update..." if you have it
+      const statusEl = document.getElementById("status");
+      if (statusEl) statusEl.innerText = "Live";
+  
+      // Update best bid
+      if (data.best_bid) {
+        document.getElementById("best-bid").innerText = `Price: ${data.best_bid.price} | Quantity: ${data.best_bid.disclosed}`;
+      }
+  
+      // Update best ask
+      if (data.best_ask) {
+        document.getElementById("best-ask").innerText = `Price: ${data.best_ask.price} | Quantity: ${data.best_ask.disclosed}`;
+      }
+  
+      // Update buy orders table
+      if (data.buy_orders) {
+        const buyOrdersTable = document.querySelector("#buy-orders tbody");
+        buyOrdersTable.innerHTML = "";
+        data.buy_orders.forEach(order => {
+          buyOrdersTable.innerHTML += `<tr><td>${order.price}</td><td>${order.disclosed}</td></tr>`;
+        });
+      }
+  
+      // Update sell orders table
+      if (data.sell_orders) {
+        const sellOrdersTable = document.querySelector("#sell-orders tbody");
+        sellOrdersTable.innerHTML = "";
+        data.sell_orders.forEach(order => {
+          sellOrdersTable.innerHTML += `<tr><td>${order.price}</td><td>${order.disclosed}</td></tr>`;
+        });
+      }
+  
+      // Update trades table
+      if (data.trades) {
+        const tradesTable = document.querySelector("#trades tbody");
+        tradesTable.innerHTML = "";
+        data.trades.forEach(trade => {
+          tradesTable.innerHTML += `
+            <tr>
+              <td>${trade.buyer}</td>
+              <td>${trade.seller}</td>
+              <td>${trade.price}</td>
+              <td>${trade.quantity}</td>
+              <td>${trade.timestamp || '-'}</td>
+            </tr>`;
+        });
+      }
+    };
+  
+    socket.onerror = (error) => {
+      console.log("WebSocket Error: ", error);
+    };
+  
+    socket.onclose = (event) => {
+      console.log("WebSocket connection closed: ", event);
+      const statusEl = document.getElementById("status");
+      if (statusEl) statusEl.innerText = "Disconnected";
+    };
+  </script>  
 </body>
 </html>
