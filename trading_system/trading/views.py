@@ -5,7 +5,7 @@ from django.db import transaction
 from django.contrib.auth.decorators import login_required
 import json
 from django.contrib import messages
-from django.utils import timezone
+from .utils import broadcast_orderbook_update  # Assuming broadcast_orderbook_update is in utils.py
 
 from .utils import match_order  # Assuming match_order is in utils.py
 from django.http import JsonResponse
@@ -19,6 +19,7 @@ def login(request):
 def fetch_best_ask():
     # Fetch the best ask price (lowest available price for a buy order)
     return Order.objects.filter(order_type="SELL", is_matched=False).order_by('price').values('price', 'quantity').first()
+
 def fetch_best_bid():
     # Fetch the best bid price (highest available price for a sell order)
     return Order.objects.filter(order_type="BUY", is_matched=False).order_by('-price').values('price', 'quantity').first()
@@ -103,11 +104,18 @@ def home(request):
                 else:
                     # Proceed with saving the order or further logic
                     messages.success(request, "Order placed successfully!")
-                    new_order.save()
-                    print("call1")
-                    if(not is_ioc):
-                        match_order(new_order)
-                    messages.success(request, 'Your order has been placed successfully!')
+                    print("I am here")
+                    try:
+                        new_order.save()
+                        print("Order saved!")
+                        broadcast_orderbook_update()
+                        print("call1")
+                        if not is_ioc:
+                            match_order(new_order)
+                        messages.success(request, 'Your order has been placed successfully!')
+                    except Exception as e:
+                        print("Error saving order:", e)
+                        messages.error(request, f"Order could not be saved: {e}")
                     return redirect('/home')
 
             else:
@@ -122,7 +130,7 @@ def home(request):
                     is_ioc=is_ioc,
                     user=user,
                 )
-                
+                broadcast_orderbook_update()
 
                 if disclosed < 0.1 * quantity:  # disclosed_quantity should not be > 10% of quantity
                     messages.error(request, "Disclosed Quantity cannot be less than 10% greater than Quantity.")
@@ -131,13 +139,13 @@ def home(request):
                     # Proceed with saving the order or further logic
                     messages.success(request, "Stoploss Order placed successfully!")
                     new_order.save()
-                    execute_order()
+                    broadcast_orderbook_update()
                     messages.success(request, 'Your Stoploss order has been placed successfully!')
                     return redirect('/home')
 
 
         except Exception as e:
-            render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
+            return render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
         
 
 
@@ -166,7 +174,7 @@ def orderbook(request):
     
     # Retrieve all trades (you may filter or sort as needed)
     trades = Trade.objects.all().order_by('-timestamp')  # Sorting trades by timestamp
-    
+  
     # Display both buy and sell orders in the orderbook, along with trades
     return render(request, 'trading/orderbook.html', {
         'buy_orders': buy_orders,
@@ -246,6 +254,7 @@ def update_prev_order(request):
             order.disclosed = new_disclosed
             order.price = new_price
             order.save()
+            broadcast_orderbook_update()
 
             return JsonResponse({'success': True})
 

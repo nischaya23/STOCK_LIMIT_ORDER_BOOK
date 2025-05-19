@@ -384,8 +384,9 @@ function checkOrderMode() {
                 priceField.value = data.best_ask.price;
                 priceField.placeholder = data.best_ask.price;
               } else {
-                priceField.value = 'Unavailable';
+                priceField.value = 0;
                 priceField.placeholder = "Unavailable";
+                priceField.disabled = true;
               }
             })
             .catch(error => {

@@ -1,18 +1,30 @@
-import json
+# consumers.py
 from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import Order, Trade
-from django.db.models import Q
+import json
 
 class OrderBookConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.group_name = "orderbook_group"
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        print(f"Client connected: {self.channel_name}")
+        await self.channel_layer.group_add('orderbook_group', self.channel_name)
         await self.accept()
 
+    # async def receive(self, text_data):
+    #     data = json.loads(text_data)
+      
+    #     await self.channel_layer.group_send(
+    #         self.room_group_name,
+    #         {
+    #             'type': 'orderbook_update',
+    #             'data': data
+    #         }
+    #     )
+
+
+
+
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+        await self.channel_layer.group_discard('orderbook_group', self.channel_name)
 
-    async def orderbook_update(self, event):
-        # event['data'] contains your payload
-        await self.send(text_data=json.dumps(event['data']))
-
+    async def send_order_update(self, event):
+        print("Sending update to client")
+        await self.send(text_data=json.dumps(event['payload']))
