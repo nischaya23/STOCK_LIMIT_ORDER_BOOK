@@ -155,7 +155,7 @@ def home(request):
     # changes:
     stoploss_orders = Stoploss_Order.objects.filter(user=user)
 
-
+    execute_order()
     return render(request, 'trading/home.html', {'user': user, 'orders': orders,'trades': trades,'stoploss_orders': stoploss_orders})
 
 
@@ -356,49 +356,52 @@ def cancel_stoploss_order(request):
         except Exception as e:
             logger.error(f"Cancel stoploss order error: {str(e)}")
             return JsonResponse({'success': False, 'message': str(e)}, status=500)
+from django.db import transaction
+from django.utils import timezone
+import logging
+from .models import Stoploss_Order, Order
+from .views import match_order
 
+logger = logging.getLogger(__name__)
+
+def convert_stoploss_to_order(stoploss_order):
+    return Order(
+        user=stoploss_order.user,
+        order_type=stoploss_order.order_type,
+        order_mode=stoploss_order.order_mode,
+        quantity=stoploss_order.quantity,
+        price=stoploss_order.price,
+        disclosed=stoploss_order.disclosed,
+        original_quantity=stoploss_order.quantity,
+        timestamp=timezone.now(),
+        is_matched=False
+    )
+
+@transaction.atomic
 def execute_order():
-        last_trade=Trade.objects.last()
-        closing_price=last_trade.price
-        stop_loss_buy_orders = Stoploss_Order.objects.filter(order_type='BUY').order_by('target_price')
-        stop_loss_sell_orders= Stoploss_Order.objects.filter(order_type='SELL').order_by('-target_price')
-        print(closing_price)
-        if closing_price is not None:
-            # Process BY stop-loss orders
-            for buy_order in stop_loss_buy_orders:
-                
-                if buy_order.target_price <= closing_price:
-                    
-                        
-                    new_order = Order(
-                        user=buy_order.user,
-                        order_type=buy_order.order_type,
-                        order_mode=buy_order.order_mode,  # Assuming stop-loss orders are treated as limit orders
-                        quantity=buy_order.quantity,
-                        price=buy_order.price,  # Use target_price as the price for the order
-                        disclosed=buy_order.disclosed,
-                        original_quantity=buy_order.quantity,  # Copy disclosed quantity if it exists
-                        timestamp=timezone.now(),
-                        is_matched=False  # Mark as unmatched initially
-                    )
-                    new_order.save()
-                    match_order(new_order)
-                    buy_order.delete()
-                    
-            for sell_order in stop_loss_sell_orders:
-                if sell_order.target_price >= closing_price:
-                         # Move the order to the main Order table
-                    new_order = Order(
-                        user=sell_order.user,
-                        order_type=sell_order.order_type,
-                        order_mode=sell_order.order_mode,  # Assuming stop-loss orders are treated as limit orders
-                        quantity=sell_order.quantity,
-                        price=sell_order.price,  # Use target_price as the price for the order
-                        disclosed=sell_order.disclosed,  # Copy disclosed quantity if it exists
-                        timestamp=timezone.now(),
-                        original_quantity=sell_order.quantity,
-                        is_matched=False  # Mark as unmatched initially
-                    ) 
-                    new_order.save()
-                    match_order(new_order)
-                    sell_order.delete()
+    print("was called!")
+    last_trade = Trade.objects.last()
+    if not last_trade:
+        logger.info("No last trade found.")
+        return
+    
+    closing_price = last_trade.price
+    logger.info("Last trade price: %s", closing_price)
+
+    stop_loss_buy_orders = Stoploss_Order.objects.filter(order_type='BUY').order_by('target_price')
+    stop_loss_sell_orders = Stoploss_Order.objects.filter(order_type='SELL').order_by('-target_price')
+
+    for buy_order in stop_loss_buy_orders:
+        if buy_order.target_price >= closing_price:
+            new_order = convert_stoploss_to_order(buy_order)
+            new_order.save()
+            match_order(new_order)
+            buy_order.delete()
+
+    for sell_order in stop_loss_sell_orders:
+        if sell_order.target_price <= closing_price:
+            new_order = convert_stoploss_to_order(sell_order)
+            new_order.save()
+            match_order(new_order)
+            sell_order.delete()
+    

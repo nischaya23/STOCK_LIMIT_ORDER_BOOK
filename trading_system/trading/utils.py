@@ -5,7 +5,7 @@ from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
 
-def match_order(new_order):
+def match_order(new_order):   
     print("match")
     # changes
     closing_price= None
@@ -295,3 +295,4 @@ def broadcast_orderbook_update():
         }
     )
     print("Orderbook updated and broadcasted")
+    # return payload

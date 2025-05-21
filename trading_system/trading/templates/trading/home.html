@@ -695,7 +695,7 @@ function checkOrderMode() {
     </div>
 
     {% if messages %}
-    <div id="flash-messages">
+    <div id="flash-messagess">
       <div class="flash-message">
         {% for message in messages %}
         <p><span style="color: var(--neon);">{{ message }}</span></p>
@@ -927,11 +927,11 @@ function checkOrderMode() {
               {% endif %}
             {% endfor %}
           </tbody>
-        </table>
+        </table>  
         {% else %}
-        <div class="flash-message alert-warning">
+        <!-- <div id="flash-messages" class="flash-message alert-warning">
           <p>No active stoploss orders found.</p>
-        </div>
+        </div> -->
         {% endif %}
       </div>
     </div>
