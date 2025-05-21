@@ -90,7 +90,7 @@ def match_order(new_order):
                 if opposite_order.quantity == 0:
                     opposite_order.is_matched = True
                 opposite_order.save()
-                broadcast_orderbook_update
+                broadcast_orderbook_update()
             
             # Handle IOC order after matching
             if executed_quantity>0:
@@ -100,13 +100,13 @@ def match_order(new_order):
                 new_order.disclosed=0 
                 print("saved1")
                 new_order.save()
-                broadcast_orderbook_update
+                broadcast_orderbook_update()
                 return  # To prevent further processing
             else:
                 # Completely unexecuted:delete the order
                 print("delete1")
                 new_order.delete()
-                broadcast_orderbook_update
+                broadcast_orderbook_update()
                 return
 
         # Try to match with the opposite orders
@@ -203,9 +203,9 @@ def match_order(new_order):
                             new_order.disclosed=new_order.quantity
                         opposite_order.is_matched = True
                         opposite_order.save()
-                        broadcast_orderbook_update
+                        broadcast_orderbook_update()
                         new_order.save()
-                        broadcast_orderbook_update
+                        broadcast_orderbook_update()
                     else:
                         Trade.objects.create(
                             buyer=new_order.user if new_order.order_type == 'BUY' else opposite_order.user,

@@ -181,15 +181,7 @@
             </div>
             
             <thead>
-<<<<<<< HEAD
-              <tr>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Disclosed</th>
-              </tr>
-=======
               <tr><th>Price</th><th>Quantity</th></tr>
->>>>>>> f1204e16aaad4dc3f43667780bb598fb57a27526
             </thead>
             <tbody><tr><td colspan="2">Waiting for update...</td></tr></tbody>
           </table>
@@ -204,15 +196,7 @@
         <div class="table-responsive">
           <table id="sell-orders">
             <thead>
-<<<<<<< HEAD
-              <tr>
-                <th>Price</th>
-                <th>Quantity</th>
-                <th>Disclosed</th>
-              </tr>
-=======
               <tr><th>Price</th><th>Quantity</th></tr>
->>>>>>> f1204e16aaad4dc3f43667780bb598fb57a27526
             </thead>
             <tbody><tr><td colspan="2">Waiting for update...</td></tr></tbody>
           </table>
@@ -527,218 +511,6 @@ function updateSellOrders() {
         .catch(error => console.error('Error fetching Recent Trades:', error));
     }
 
-<<<<<<< HEAD
-    function downloadTradesCSV() {
-  fetch('get_recent_trades/')
-    .then(response => response.json())
-    .then(data => {
-      const trades = data.trades;
-      const headers = ["buyer", "seller", "price", "quantity", "timestamp"];
-      const rows = trades.map(trade => headers.map(h => {
-        let val = trade[h];
-        return `"${(val ?? "").toString().replace(/"/g, '""')}"`;
-      }).join(','));
-
-      const csv = [headers.join(','), ...rows].join('\r\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'recent_trades.csv';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    })
-    .catch(err => console.error('Error generating CSV:', err));
-}
-
-
-    document.addEventListener('DOMContentLoaded', function () {
-      setInterval(() => {
-        updateBuyOrders();
-        updateSellOrders();
-        updateRecentTrades();
-        updateBestBid();
-        updateBestAsk();
-      }, 5000); // Update every 1 second
-    });
-  </script>
-  <script>
-const socket = new WebSocket('ws://' + window.location.host + '/ws/orderbook/');
-
-socket.addEventListener('open', () => {
-  console.log('WebSocket connected.');
-});
-
-socket.addEventListener('message', event => {
-  try {
-    const data = JSON.parse(event.data);
-
-
-    if (data.buy_orders) renderBuyOrders(data.buy_orders);
-    if (data.sell_orders) renderSellOrders(data.sell_orders);
-    if (data.trades) renderRecentTrades(data.trades);
-    if (data.best_bid) updateBestBidUI(data.best_bid);
-    if (data.best_ask) updateBestAskUI(data.best_ask);
-    }
-  catch (e) {
-    console.error('Error parsing WebSocket message:', e);
-  }
-});
-
-socket.addEventListener('close', () => {
-  console.log('WebSocket disconnected.');
-  // Optionally add reconnection logic here
-});
-
-socket.addEventListener('error', error => {
-  console.error('WebSocket error:', error);
-});
-
-// --- Rendering functions ---
-
-// BUY ORDERS
-// let buyOrdersByPrice = {};
-function renderBuyOrders(buyOrders) {
-  const tbody = document.querySelector('#buy-orders tbody');
-  tbody.innerHTML = '';
-  buyOrdersByPrice = {};
-
-  const grouped = {};
-  buyOrders.filter(o => !o.is_ioc).forEach(o => {
-    const price = parseFloat(o.price).toFixed(2);
-    const qty = parseFloat(o.quantity) || 0;
-    const disc = parseFloat(o.disclosed) || 0;
-
-    if (!grouped[price]) grouped[price] = { quantity: 0, disclosed: 0 };
-    grouped[price].quantity += qty;
-    grouped[price].disclosed += disc;
-
-    if (!buyOrdersByPrice[price]) buyOrdersByPrice[price] = [];
-    buyOrdersByPrice[price].push(o);
-  });
-
-  Object.entries(grouped)
-    .sort((a,b) => parseFloat(b[0]) - parseFloat(a[0]))
-    .forEach(([price, {quantity, disclosed}]) => {
-      const tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
-      tr.innerHTML = `
-        <td>${price}</td>
-        <td>${quantity}</td>
-        <td>${disclosed}</td>
-      `;
-      tr.addEventListener('click', () => showOrderDetails(price, 'buy'));
-      tbody.appendChild(tr);
-    });
-}
-
-// SELL ORDERS
-// let sellOrdersByPrice = {};
-function renderSellOrders(sellOrders) {
-  const tbody = document.querySelector('#sell-orders tbody');
-  tbody.innerHTML = '';
-  sellOrdersByPrice = {};
-
-  const grouped = {};
-  sellOrders.filter(o => !o.is_ioc).forEach(o => {
-    const price = parseFloat(o.price).toFixed(2);
-    const qty = parseFloat(o.quantity) || 0;
-    const disc = parseFloat(o.disclosed) || 0;
-
-    if (!grouped[price]) grouped[price] = { quantity: 0, disclosed: 0 };
-    grouped[price].quantity += qty;
-    grouped[price].disclosed += disc;
-
-    if (!sellOrdersByPrice[price]) sellOrdersByPrice[price] = [];
-    sellOrdersByPrice[price].push(o);
-  });
-
-  Object.entries(grouped)
-    .sort((a,b) => parseFloat(a[0]) - parseFloat(b[0]))
-    .forEach(([price, {quantity, disclosed}]) => {
-      const tr = document.createElement('tr');
-      tr.style.cursor = 'pointer';
-      tr.innerHTML = `
-        <td>${price}</td>
-        <td>${quantity}</td>
-        <td>${disclosed}</td>
-      `;
-      tr.addEventListener('click', () => showOrderDetails(price, 'sell'));
-      tbody.appendChild(tr);
-    });
-}
-
-// RECENT TRADES
-function renderRecentTrades(trades) {
-  const tbody = document.querySelector('#trades tbody');
-  tbody.innerHTML = '';
-  trades.forEach(trade => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${trade.buyer}</td>
-      <td>${trade.seller}</td>
-      <td>${trade.price}</td>
-      <td>${trade.quantity}</td>
-      <td>${trade.timestamp}</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// BEST BID UI
-function updateBestBidUI(bestBid) {
-  const bestBidContainer = document.querySelector('#best-bid');
-  if (bestBid && bestBid.price !== null) {
-    bestBidContainer.innerHTML = `Price: ${bestBid.price} | Quantity: ${bestBid.disclosed}`;
-  } else {
-    bestBidContainer.innerHTML = 'No bids available';
-  }
-}
-
-// BEST ASK UI
-function updateBestAskUI(bestAsk) {
-  const bestAskContainer = document.querySelector('#best-ask');
-  if (bestAsk && bestAsk.price !== null) {
-    bestAskContainer.innerHTML = `Price: ${bestAsk.price} | Quantity: ${bestAsk.disclosed}`;
-  } else {
-    bestAskContainer.innerHTML = 'No asks available';
-  }
-}
-
-// MODAL SHOW ORDER DETAILS (shared between buy & sell)
-function showOrderDetails(price, side) {
-  const map = side === 'sell' ? sellOrdersByPrice : buyOrdersByPrice;
-  const orders = map[price] || [];
-  const modal = document.getElementById('order-modal');
-  const tbody = modal.querySelector('#modal-table tbody');
-  const priceSpan = document.getElementById('modal-price');
-
-  priceSpan.textContent = price;
-  tbody.innerHTML = '';
-
-  orders.forEach(o => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${o.user || 'N/A'}</td>
-      <td>${parseFloat(o.quantity) || 0}</td>
-      <td>${parseFloat(o.disclosed) || 0}</td>
-      <td>${o.original_quantity}</td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  modal.style.display = 'flex';
-}
-
-// Close modal event
-document.getElementById('modal-close').addEventListener('click', () => {
-  document.getElementById('order-modal').style.display = 'none';
-});
-
-  </script>
-=======
     document.addEventListener('DOMContentLoaded', function (){
       updateBuyOrders();
       updateSellOrders();
@@ -819,6 +591,5 @@ document.getElementById('modal-close').addEventListener('click', () => {
       if (statusEl) statusEl.innerText = "Disconnected";
     };
   </script>  
->>>>>>> f1204e16aaad4dc3f43667780bb598fb57a27526
 </body>
 </html>
