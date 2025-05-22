@@ -40,7 +40,9 @@ def bulk_user_upload(request):
             csv_reader = csv.reader(decoded_file)
             next(csv_reader, None)
 
-            for row in csv_reader:
+            for rows in csv_reader:
+
+                row=rows[0].split(',')
                 if len(row) >= 2:  # Ensure at least two columns exist
                     username, email = row[:2]  # Get username and email
                     password = row[2] if len(row) > 2 else 'defaultpassword'  # Set password if given, else default
