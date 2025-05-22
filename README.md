@@ -28,8 +28,8 @@ This project is a web-based trading system that simulates a stock limit order bo
 1. **Clone the repository:**
    ```sh
    git clone <repository-url>
-   git checkout new_database
    cd STOCK_LIMIT_ORDER_BOOK
+   git checkout new_database
    ```
 2. **Create a virtual environment and activate it:**
    ```sh
