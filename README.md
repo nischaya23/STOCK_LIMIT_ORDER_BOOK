@@ -1,9 +1,6 @@
 # IIM-A-Project-FAC
 
-1. \clear to clear data base need to add button for that
-2. need to work on market order
 
----
 
 This project is a web-based trading system that simulates a stock limit order book, allowing users to place, modify, and cancel buy/sell orders. It is designed for educational and demonstration purposes.
 
@@ -42,23 +39,27 @@ This project is a web-based trading system that simulates a stock limit order bo
    ```sh
    pip install -r requirements.txt
    ```
-4. sudo apt update && sudo apt install redis-server
+
+4. Redis Server Setup
+```sh
+   sudo apt update && sudo apt install redis-server
     sudo apt update && sudo apt install redis-server
     redis-cli ping
+```
 
-5. **Set up the database:**
+6. **Set up the database:**
    ```sh
    python manage.py migrate
    ```
-6. **Create a superuser (admin) account:**
+7. **Create a superuser (admin) account:**
    ```sh
    python manage.py createsuperuser
    ```
-7. **Run the development server:**
+8. **Run the development server:**
    ```sh
    python manage.py runserver
    ```
-8. **Access the application:**
+9. **Access the application:**
    Open your web browser and go to `http://127.0.0.1:8000/`.
 
 ## Usage
