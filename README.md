@@ -1,10 +1,4 @@
 # IIM-A-Project-FAC
-
-1. \clear to clear data base need to add button for that
-2. need to work on market order
-
----
-
 This project is a web-based trading system that simulates a stock limit order book, allowing users to place, modify, and cancel buy/sell orders. It is designed for educational and demonstration purposes.
 
 ## Features
