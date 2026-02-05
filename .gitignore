@@ -88,6 +88,9 @@ Desktop.ini
 # Redis dump
 *.rdb
 
-# Environment/config files
-*.env
-.env.*
+# # Environment/config files
+# *.env
+# .env.*
+
+.env
+!.env.example
