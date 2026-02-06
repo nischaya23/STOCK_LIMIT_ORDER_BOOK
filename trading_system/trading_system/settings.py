@@ -12,6 +12,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 
 from pathlib import Path
 
+import os 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -93,24 +98,14 @@ WSGI_APPLICATION = "trading_system.wsgi.application"
 
 DATABASES = { 'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'trading_platform',
-<<<<<<< HEAD
-        'USER': 'krish',
-        'PASSWORD': 'krish2908',
-        'HOST': 'localhost',
-        'PORT': '5432',
-        'OPTIONS': {
-            'sslmode': 'disable',
-        }
-=======
-        'USER': 'trading_user',
-        'PASSWORD': 'pass',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
         #'OPTIONS': {
         #    'sslmode': 'require',
         #}
->>>>>>> 9b6aba8c1134c9fc5a459d99f2446b5d0ac1a8a8
     }
 }
 
