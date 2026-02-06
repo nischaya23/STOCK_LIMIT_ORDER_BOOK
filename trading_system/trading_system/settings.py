@@ -94,6 +94,7 @@ WSGI_APPLICATION = "trading_system.wsgi.application"
 DATABASES = { 'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'trading_platform',
+<<<<<<< HEAD
         'USER': 'krish',
         'PASSWORD': 'krish2908',
         'HOST': 'localhost',
@@ -101,6 +102,15 @@ DATABASES = { 'default': {
         'OPTIONS': {
             'sslmode': 'disable',
         }
+=======
+        'USER': 'trading_user',
+        'PASSWORD': 'pass',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
+        #'OPTIONS': {
+        #    'sslmode': 'require',
+        #}
+>>>>>>> 9b6aba8c1134c9fc5a459d99f2446b5d0ac1a8a8
     }
 }
 
