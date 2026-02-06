@@ -93,13 +93,13 @@ WSGI_APPLICATION = "trading_system.wsgi.application"
 
 DATABASES = { 'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'defaultdb',
-        'USER': 'avnadmin',
-        'PASSWORD': 'AVNS_oDL48ZDQK9C__oYZ6Y7',
-        'HOST': 'pg-2e467df3-akshatgarg715-d3e4.k.aivencloud.com',
-        'PORT': '14026',
+        'NAME': 'trading_platform',
+        'USER': 'krish',
+        'PASSWORD': 'krish2908',
+        'HOST': 'localhost',
+        'PORT': '5432',
         'OPTIONS': {
-            'sslmode': 'require',
+            'sslmode': 'disable',
         }
     }
 }
