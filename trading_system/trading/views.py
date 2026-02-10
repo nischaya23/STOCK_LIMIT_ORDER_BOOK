@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import User, Order, Trade, Stoploss_Order
+from .models import BaseUser, Trader, MarketMaker, Order, Trade, Stoploss_Order
 from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
@@ -13,8 +13,16 @@ from django.http import JsonResponse
 def login(request):
     if request.method == 'POST':
         username = request.POST.get('username')
-        user, created = User.objects.get_or_create(username=username)
-        return redirect('home', user_id=user.id)
+        user_type = request.POST.get('user_type')
+
+        if user_type == 'TRADER':
+            user, created = Trader.objects.get_or_create(username=username,role="TRADER")
+            return redirect('trader_home', user_id=user.id)
+        else:
+            user, created = MarketMaker.objects.get_or_create(username=username,role="MARKET_MAKER")
+            return redirect('market_maker_home', user_id=user.id)
+
+        
     return render(request, 'trading/login.html')
 def fetch_best_ask():
     # Fetch the best ask price (lowest available price for a buy order)
@@ -39,13 +47,16 @@ def get_best_bid(request):
     return JsonResponse({'best_bid': None})
 
 @login_required  # Ensure the user is logged in before accessing this view
-def home(request):
-    user = request.user  # Get the logged-in user
-    user, created = User.objects.get_or_create(username=user)
+def market_maker_home(request):
+    auth_user = request.user
+    user = BaseUser.objects.get(username=auth_user.username)
+
+    if user.role != "MARKET_MAKER":
+        return redirect('trader_home')
 
     if request.method == "POST":
         order_type = request.POST.get('order_type')
-        order_mode = request.POST.get('order_mode')
+        order_mode = 'LIMIT'
         quantity = int(request.POST.get('quantity'))
         disclosed = int(request.POST.get('disclosed_quantity'))
         stoploss_order =  request.POST.get('Stoploss_order')
@@ -63,7 +74,112 @@ def home(request):
             if order_mode == "LIMIT":
                 price = float(request.POST.get('price', 0))  # Default to 0 if no price is provided
 
-            elif order_mode == "MARKET":
+
+            if disclosed>quantity:
+                disclosed=quantity
+
+            if(stoploss_order=='NO' or stoploss_order==None):
+                    # Save or process the order here
+                new_order = Order(
+                    order_type=order_type,
+                    order_mode=order_mode,
+                    quantity=quantity,
+                    disclosed=disclosed,
+                    price=price,
+                    is_matched=False,
+                    is_ioc=is_ioc,
+                    user=user,  # Ensure the order is associated with the logged-in user
+                    original_quantity=original_quantity
+
+                )
+
+                if disclosed < 0.1 * quantity:  # disclosed_quantity should not be > 10% of quantity
+                    messages.error(request, "Disclosed Quantity cannot be less than 10% greater than Quantity.")
+
+                else:
+                    # Proceed with saving the order or further logic
+                    messages.success(request, "Order placed successfully!")
+                    print("I am here")
+                    try:
+                        new_order.save()
+                        print("Order saved!")
+                        broadcast_orderbook_update()
+                        print("call1")
+                        if not is_ioc:
+                            match_order(new_order)
+                        messages.success(request, 'Your order has been placed successfully!')
+                    except Exception as e:
+                        print("Error saving order:", e)
+                        messages.error(request, f"Order could not be saved: {e}")
+                    return redirect('market_maker_home')
+
+            else:
+                new_order = Stoploss_Order (
+                    order_type=order_type,
+                    order_mode=order_mode,
+                    quantity=quantity,
+                    disclosed=disclosed,
+                    target_price=target_price,
+                    price=price,
+                    is_matched=False,
+                    is_ioc=is_ioc,
+                    user=user,
+                )
+                broadcast_orderbook_update()
+
+                if disclosed < 0.1 * quantity:  # disclosed_quantity should not be > 10% of quantity
+                    messages.error(request, "Disclosed Quantity cannot be less than 10% greater than Quantity.")
+
+                else:
+                    # Proceed with saving the order or further logic
+                    messages.success(request, "Stoploss Order placed successfully!")
+                    new_order.save()
+                    broadcast_orderbook_update()
+                    messages.success(request, 'Your Stoploss order has been placed successfully!')
+                    return redirect('market_maker_home')
+
+
+        except Exception as e:
+            return render(request, 'trading/market-maker.html', {'error': 'Unable to fetch market price for the order type.'})
+        
+
+
+    # Fetch orders associated with the user
+    orders = Order.objects.filter(user=user)  # Filter orders by the logged-in user
+    trades = Trade.objects.filter(Q(buyer=user) | Q(seller=user))
+    # changes:
+    stoploss_orders = Stoploss_Order.objects.filter(user=user)
+
+    execute_order()
+    return render(request, 'trading/market-maker.html', {'user': user, 'orders': orders,'trades': trades,'stoploss_orders': stoploss_orders})
+
+def trader_home(request):
+    auth_user = request.user
+    user = BaseUser.objects.get(username=auth_user.username)
+
+
+    if user.role != "TRADER":
+        return redirect('market_maker_home')
+    
+    if request.method == "POST":
+        order_type = request.POST.get('order_type')
+        order_mode = "MARKET"
+        quantity = int(request.POST.get('quantity'))
+        disclosed = int(request.POST.get('disclosed_quantity'))
+        stoploss_order =  "NO"
+        target_price = None
+        is_ioc=request.POST.get('is_ioc')=='True'
+        original_quantity=quantity
+
+        price = None
+        end_time=request.POST.get('end_time')
+
+        if disclosed==0:
+            disclosed=quantity
+
+        try:
+
+            if order_mode == "MARKET":
                 if order_type == "BUY":
                     # Fetch the JSON response from the best ask view
                     best_ask_response = fetch_best_ask()
@@ -77,7 +193,7 @@ def home(request):
                     price = best_bid_data['price']
 
                 if price is None:
-                    return render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
+                    return render(request, 'trading/trader.html', {'error': 'Unable to fetch market price for the order type.'})
                     # Create and save the new order
 
             if disclosed>quantity:
@@ -116,7 +232,7 @@ def home(request):
                     except Exception as e:
                         print("Error saving order:", e)
                         messages.error(request, f"Order could not be saved: {e}")
-                    return redirect('/home')
+                    return redirect('trader_home')
 
             else:
                 new_order = Stoploss_Order (
@@ -141,11 +257,11 @@ def home(request):
                     new_order.save()
                     broadcast_orderbook_update()
                     messages.success(request, 'Your Stoploss order has been placed successfully!')
-                    return redirect('/home')
+                    return redirect('trader_home')
 
 
         except Exception as e:
-            return render(request, 'trading/home.html', {'error': 'Unable to fetch market price for the order type.'})
+            return render(request, 'trading/trader.html', {'error': 'Unable to fetch market price for the order type.'})
         
 
 
@@ -156,7 +272,8 @@ def home(request):
     stoploss_orders = Stoploss_Order.objects.filter(user=user)
 
     execute_order()
-    return render(request, 'trading/home.html', {'user': user, 'orders': orders,'trades': trades,'stoploss_orders': stoploss_orders})
+    return render(request, 'trading/trader.html', {'user': user, 'orders': orders,'trades': trades,'stoploss_orders': stoploss_orders})
+
 
 
 
@@ -298,7 +415,7 @@ def cancel_order(request):
         try:
             logger.debug(f"Cancellation request received: {request.body}")
             # Get current user using the same pattern as order placement
-            user = User.objects.get(username=request.user.username)
+            user = BaseUser.objects.get(username=request.user.username)
             
             data = json.loads(request.body)
             order_id = data.get('order_id')
@@ -313,7 +430,7 @@ def cancel_order(request):
             
             return JsonResponse({'success': True, 'message': 'Order cancelled successfully'})
         
-        except User.DoesNotExist:
+        except BaseUser.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'User authentication failed'}, status=401)
         except Order.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Order not found or already matched'}, status=404)
@@ -332,7 +449,7 @@ def cancel_stoploss_order(request):
     if request.method == 'POST':
         try:
             logger.debug(f"Stoploss cancellation request received: {request.body}")
-            user = User.objects.get(username=request.user.username)
+            user = BaseUser.objects.get(username=request.user.username)
             
             data = json.loads(request.body)
             order_id = data.get('order_id')
@@ -347,7 +464,7 @@ def cancel_stoploss_order(request):
             
             return JsonResponse({'success': True, 'message': 'Stoploss order cancelled successfully'})
         
-        except User.DoesNotExist:
+        except BaseUser.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'User authentication failed'}, status=401)
         except Stoploss_Order.DoesNotExist:
             return JsonResponse({'success': False, 'message': 'Order not found or already matched'}, status=404)
@@ -360,7 +477,7 @@ from django.db import transaction
 from django.utils import timezone
 import logging
 from .models import Stoploss_Order, Order
-from .views import match_order
+from .utils import match_order
 
 logger = logging.getLogger(__name__)
 
