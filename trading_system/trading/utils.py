@@ -246,8 +246,18 @@ from channels.layers import get_channel_layer
 def broadcast_orderbook_update():
     from .models import Order, Trade
 
-    buy_orders = Order.objects.filter(order_type='BUY', is_matched=False).order_by('-price')
-    sell_orders = Order.objects.filter(order_type='SELL', is_matched=False).order_by('price')
+    buy_orders = Order.objects.filter(
+        order_type='BUY',
+        order_mode='LIMIT',
+        price__isnull=False,
+        is_matched=False,
+    ).order_by('-price')
+    sell_orders = Order.objects.filter(
+        order_type='SELL',
+        order_mode='LIMIT',
+        price__isnull=False,
+        is_matched=False,
+    ).order_by('price')
     recent_trades = Trade.objects.order_by('-timestamp')[:10]
 
     best_bid = buy_orders.first()
